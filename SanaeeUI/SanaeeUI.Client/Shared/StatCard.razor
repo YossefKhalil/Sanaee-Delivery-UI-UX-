@@ -1,0 +1,25 @@
+@namespace SanaeeUI.Client.Shared
+
+<MudPaper Class="stat-card pa-4" Elevation="1">
+    <div class="d-flex align-center justify-space-between">
+        <div>
+            <MudText Typo="Typo.overline" Class="mud-text-secondary">@Title</MudText>
+            <MudText Typo="Typo.h5" Style="font-weight:700;">@Value</MudText>
+        </div>
+        <div class="stat-icon" style="background:@($"var(--mud-palette-{Color.ToString().ToLower()})")1a;">
+            <MudIcon Icon="@Icon" Color="@Color" Size="Size.Medium" />
+        </div>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(Caption))
+    {
+        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">@Caption</MudText>
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Insights;
+    [Parameter] public Color Color { get; set; } = Color.Primary;
+    [Parameter] public string? Caption { get; set; }
+}

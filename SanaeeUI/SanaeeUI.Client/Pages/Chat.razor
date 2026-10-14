@@ -1,0 +1,141 @@
+@page "/chat"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Messages</PageTitle>
+
+<PageHeader Title="Messages" Subtitle="Order-scoped conversations between customers and providers"
+            Count="@($"{_threads.Count} threads")" />
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudPaper Elevation="1" Class="pa-2" Style="max-height:70vh; overflow:auto;">
+            <MudList T="int" @bind-SelectedValue="_selectedOrder">
+                @foreach (var t in _threads)
+                {
+                    <MudListItem T="int" Value="@t.OrderId">
+                        <div class="d-flex align-center gap-2">
+                            <MudAvatar Color="Color.Primary" Size="Size.Medium">@Initials(t.OrderId)</MudAvatar>
+                            <div style="flex:1;">
+                                <div class="d-flex justify-space-between">
+                                    <MudText Typo="Typo.body2" Style="font-weight:600;">Order #@t.OrderId</MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@t.Last.SentAt.ToString("HH:mm")</MudText>
+                                </div>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary text-truncate-2" Style="max-width:220px;">
+                                    @(t.Last.Content ?? $"[{t.Last.Type.Spaced()}]")
+                                </MudText>
+                            </div>
+                            <MudBadge Color="Color.Primary" Content="@t.Count.ToString()" Overlap="true" />
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="8">
+        <MudPaper Elevation="1" Style="height:70vh; display:flex; flex-direction:column;">
+            <div class="pa-3" style="border-bottom:1px solid var(--mud-palette-lines-default);">
+                <MudText Typo="Typo.subtitle1" Style="font-weight:700;">Order #@_selectedOrder</MudText>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    @if (_currentOrder is not null)
+                    {
+                        @($"{_currentOrder.Category} · {_currentOrder.Customer} · {_currentOrder.Status.Spaced()}")
+                    }
+                </MudText>
+            </div>
+
+            <div class="pa-4" style="flex:1; overflow:auto; background:var(--mud-palette-background);">
+                @if (_messages.Count == 0)
+                {
+                    <MudText Class="mud-text-secondary">No messages in this conversation.</MudText>
+                }
+                @foreach (var m in _messages.OrderBy(x => x.SentAt))
+                {
+                    var self = m.Sender == _selfName;
+                    <div class="d-flex mb-3" style="@(self ? "justify-content:flex-end;" : "justify-content:flex-start;")">
+                        @if (!self)
+                        {
+                            <MudAvatar Size="Size.Small" Color="Color.Secondary" Class="mr-2">@Initials(m.Sender)</MudAvatar>
+                        }
+                        <div style="max-width:70%;">
+                            <MudPaper Class="pa-3" Elevation="1"
+                                      Style="@(self ? "background:var(--mud-palette-primary); color:#fff; border-radius:14px 14px 4px 14px;"
+                                                    : "background:var(--mud-palette-surface); border-radius:14px 14px 14px 4px;")">
+                                @if (m.IsSystemMessage)
+                                {
+                                    <MudText Typo="Typo.caption" Style="font-style:italic; opacity:.85;"><MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" /> @m.Content</MudText>
+                                }
+                                else if (m.Type == MessageType.Location)
+                                {
+                                    <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.LocationOn" /> Shared a location pin</div>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2">@m.Content</MudText>
+                                }
+                            </MudPaper>
+                            <div class="d-flex align-center gap-1 mt-1" style="@(self ? "justify-content:flex-end;" : "")">
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@m.SentAt.ToString("dd MMM HH:mm")</MudText>
+                                @if (self && m.ReadAt is not null)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.DoneAll" Size="Size.Small" Color="Color.Info" />
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="pa-3 d-flex gap-2" style="border-top:1px solid var(--mud-palette-lines-default);">
+                <MudTextField @bind-Value="_draft" Placeholder="Type a message..." Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Immediate="false" />
+                <MudIconButton Icon="@Icons.Material.Filled.Mic" Color="Color.Default" />
+                <MudIconButton Icon="@Icons.Material.Filled.AttachFile" Color="Color.Default" />
+                <MudIconButton Icon="@Icons.Material.Filled.Send" Color="Color.Primary" />
+            </div>
+        </MudPaper>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-2">
+            Real-time delivery uses SignalR (ChatHub → group Order_&#123;id&#125;). Composer is UI-only in this demo.
+        </MudText>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private sealed record Thread(int OrderId, int Count, MessageListItem Last);
+
+    private List<Thread> _threads = new();
+    private List<MessageListItem> _messages = new();
+    private OrderListItem? _currentOrder;
+    private int _selectedOrder = 1;
+    private string _selfName = string.Empty;
+    private string _draft = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await Data.GetMessagesAsync();
+        _threads = all.GroupBy(m => m.OrderId)
+            .Select(g => new Thread(g.Key, g.Count(), g.OrderBy(x => x.SentAt).Last()))
+            .OrderBy(t => t.OrderId).ToList();
+        if (_threads.Count > 0) _selectedOrder = _threads[0].OrderId;
+        await LoadThreadAsync();
+    }
+
+    protected override async Task OnParametersSetAsync() => await LoadThreadAsync();
+
+    private async Task LoadThreadAsync()
+    {
+        var all = await Data.GetMessagesAsync();
+        _messages = all.Where(m => m.OrderId == _selectedOrder).ToList();
+        var orders = await Data.GetOrdersAsync();
+        _currentOrder = orders.FirstOrDefault(o => o.Id == _selectedOrder);
+        var first = _messages.FirstOrDefault(m => !m.IsSystemMessage);
+        _selfName = first?.Sender ?? string.Empty;
+    }
+
+    private static string Initials(int id) => "O" + id;
+
+    private static string Initials(string name) =>
+        string.IsNullOrWhiteSpace(name) ? "?" :
+        string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
+}

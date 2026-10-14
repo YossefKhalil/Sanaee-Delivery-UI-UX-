@@ -1,0 +1,19 @@
+@namespace SanaeeUI.Client.Shared
+
+<MudPaper Class="sanaee-card pa-3" Elevation="0">
+    <MudSkeleton Width="160px" Height="28px" Class="mb-3" />
+    @for (var r = 0; r < Rows; r++)
+    {
+        <div class="d-flex align-center gap-3 py-2">
+            @for (var c = 0; c < Columns; c++)
+            {
+                <MudSkeleton Width="@(c == 0 ? "22%" : "100%")" Height="18px" />
+            }
+        </div>
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public int Columns { get; set; } = 6;
+    [Parameter] public int Rows { get; set; } = 6;
+}

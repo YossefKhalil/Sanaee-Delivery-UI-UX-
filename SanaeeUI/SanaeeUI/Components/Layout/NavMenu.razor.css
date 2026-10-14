@@ -1,0 +1,55 @@
+.sanaee-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 18px 12px 18px;
+    border-bottom: 1px solid var(--sanaee-border);
+}
+
+.sanaee-brand-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--sanaee-primary), #084b4b);
+    color: #fff;
+    flex: 0 0 auto;
+}
+
+.sanaee-brand-title {
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.1;
+    color: var(--sanaee-text);
+}
+
+.sanaee-brand-sub {
+    font-size: .72rem;
+    color: var(--sanaee-secondary);
+    font-weight: 600;
+    letter-spacing: .3px;
+}
+
+::deep .mud-navmenu {
+    margin: 0;
+}
+
+::deep .mud-nav-link {
+    border-radius: 10px;
+}
+
+::deep .mud-nav-link.active:not(.mud-nav-link-disabled) {
+    background-color: color-mix(in srgb, var(--sanaee-primary) 14%, transparent);
+    color: var(--sanaee-primary);
+    font-weight: 600;
+}
+
+::deep .mud-nav-group > .mud-nav-link > .mud-nav-link-text {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: .72rem;
+    letter-spacing: .6px;
+    color: var(--sanaee-text-secondary);
+}

@@ -1,0 +1,62 @@
+@page "/categories"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Categories</PageTitle>
+
+<PageHeader Title="Categories" Subtitle="Service taxonomy offered on the platform"
+            Count="@($"{_filtered.Count} / {_categories.Count}")" />
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <MudTextField @bind-Value="_search" Placeholder="Search category..." Immediate="true"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+</MudPaper>
+
+<MudGrid>
+    @foreach (var c in _filtered)
+    {
+        <MudItem xs="12" sm="6" md="4" lg="3">
+            <MudPaper Class="pa-4 stat-card" Elevation="1" Style="height:100%;">
+                <div class="d-flex align-center gap-3 mb-2">
+                    <MudAvatar Color="@(c.IsActive ? Color.Primary : Color.Default)" Variant="Variant.Filled" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.Handyman" />
+                    </MudAvatar>
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;">@c.Name</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@(c.ParentCategoryId is null ? "Top level" : $"Child of #{c.ParentCategoryId}")</MudText>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(c.Description))
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary text-truncate-2" Style="min-height:40px;">@c.Description</MudText>
+                }
+                <div class="d-flex align-center justify-space-between mt-2">
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">@c.ProvidersCount providers</MudChip>
+                    <MudChip T="string" Size="Size.Small" Color="@(c.IsActive ? Color.Success : Color.Error)">
+                        @(c.IsActive ? "Active" : "Disabled")
+                    </MudChip>
+                </div>
+            </MudPaper>
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    private List<CategoryListItem> _categories = new();
+    private List<CategoryListItem> _filtered = new();
+    private string? _search;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = (await Data.GetCategoriesAsync()).OrderBy(c => c.Name).ToList();
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        _filtered = string.IsNullOrWhiteSpace(_search)
+            ? _categories.ToList()
+            : _categories.Where(c => c.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+}

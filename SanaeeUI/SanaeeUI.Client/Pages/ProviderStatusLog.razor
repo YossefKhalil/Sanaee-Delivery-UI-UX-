@@ -1,0 +1,55 @@
+@page "/provider-status"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Provider Status Log</PageTitle>
+
+<PageHeader Title="Provider Status Log" Subtitle="Activation, suspension and reinstatement history"
+            Count="@($"{_filtered.Count} / {_history.Count}")" />
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap gap-3">
+        <MudTextField @bind-Value="_search" Placeholder="Search provider..." Immediate="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:300px;" />
+        <MudSelect T="ProviderStatus?" @bind-Value="_statusFilter" Label="Status" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;">
+            @foreach (var s in Enum.GetValues<ProviderStatus>())
+            {
+                <MudSelectItem T="ProviderStatus?" Value="@s">@s.Spaced()</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</MudPaper>
+
+<MudTimeline TimelineOrientation="TimelineOrientation.Vertical" TimelinePosition="TimelinePosition.Start" Class="pa-2">
+    @foreach (var h in _filtered)
+    {
+        <MudTimelineItem Color="@h.Status.ToColor()" Size="Size.Small" Variant="Variant.Filled">
+            <MudText Typo="Typo.subtitle2">@h.Provider — @h.Status.Spaced()</MudText>
+            <MudText Typo="Typo.body2">@h.Notes</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@h.ChangedBy · @h.ChangedAt.ToString("dd MMM yyyy HH:mm")</MudText>
+        </MudTimelineItem>
+    }
+</MudTimeline>
+
+@code {
+    private List<ProviderStatusHistoryListItem> _history = new();
+    private List<ProviderStatusHistoryListItem> _filtered = new();
+    private string? _search;
+    private ProviderStatus? _statusFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _history = (await Data.GetProviderStatusHistoriesAsync()).OrderByDescending(h => h.ChangedAt).ToList();
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<ProviderStatusHistoryListItem> q = _history;
+        if (_statusFilter is not null) q = q.Where(h => h.Status == _statusFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+            q = q.Where(h => h.Provider.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));
+        _filtered = q.ToList();
+    }
+}

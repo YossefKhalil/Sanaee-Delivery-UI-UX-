@@ -1,0 +1,77 @@
+@page "/wallets"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Wallets</PageTitle>
+
+<PageHeader Title="Wallets" Subtitle="Customer and provider balances held by the platform"
+            Count="@($"{_filtered.Count} / {_wallets.Count}")" />
+
+<MudGrid Class="mb-3">
+    <MudItem xs="12" md="4">
+        <StatCard Title="Total balance" Value="@($"{_total:N0} EGP")" Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Primary" Caption="Wallet liability" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <StatCard Title="Active wallets" Value="@_active.ToString()" Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <StatCard Title="Frozen wallets" Value="@_frozen.ToString()" Icon="@Icons.Material.Filled.AcUnit" Color="Color.Warning" />
+    </MudItem>
+</MudGrid>
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <MudTextField @bind-Value="_search" Placeholder="Search user..." Immediate="true"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>Wallet</MudTh>
+        <MudTh>User</MudTh>
+        <MudTh>User id</MudTh>
+        <MudTh>Balance</MudTh>
+        <MudTh>Status</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Wallet">#@context.Id</MudTd>
+        <MudTd DataLabel="User">@context.User</MudTd>
+        <MudTd DataLabel="User id">@context.UserId</MudTd>
+        <MudTd DataLabel="Balance"><b>@context.Balance.ToString("N2") EGP</b></MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Size="Size.Small" Color="@(context.IsActive ? Color.Success : Color.Error)">
+                @(context.IsActive ? "Active" : "Frozen")
+            </MudChip>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<WalletListItem> _wallets = new();
+    private List<WalletListItem> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+    private decimal _total;
+    private int _active;
+    private int _frozen;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _wallets = (await Data.GetWalletsAsync()).OrderByDescending(w => w.Balance).ToList();
+        _total = _wallets.Sum(w => w.Balance);
+        _active = _wallets.Count(w => w.IsActive);
+        _frozen = _wallets.Count(w => !w.IsActive);
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        _filtered = string.IsNullOrWhiteSpace(_search)
+            ? _wallets.ToList()
+            : _wallets.Where(w => w.User.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+}

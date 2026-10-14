@@ -1,0 +1,91 @@
+@page "/audit"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Audit Logs</PageTitle>
+
+<PageHeader Title="Audit Logs" Subtitle="Administrative actions across users, wallets and orders"
+            Count="@($"{_filtered.Count} / {_logs.Count}")" />
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap gap-3">
+        <MudTextField @bind-Value="_search" Placeholder="Search performer or reason..." Immediate="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:300px;" />
+        <MudSelect T="EntityName?" @bind-Value="_entityFilter" Label="Entity" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:180px;">
+            @foreach (var e in Enum.GetValues<EntityName>())
+            {
+                <MudSelectItem T="EntityName?" Value="@e">@e.Spaced()</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="ActionType?" @bind-Value="_actionFilter" Label="Action" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:180px;">
+            @foreach (var a in Enum.GetValues<ActionType>())
+            {
+                <MudSelectItem T="ActionType?" Value="@a">@a.Spaced()</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>#</MudTh>
+        <MudTh>Entity</MudTh>
+        <MudTh>Entity id</MudTh>
+        <MudTh>Action</MudTh>
+        <MudTh>Reason</MudTh>
+        <MudTh>Performed by</MudTh>
+        <MudTh>Self</MudTh>
+        <MudTh>IP</MudTh>
+        <MudTh>When</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#">@context.Id</MudTd>
+        <MudTd DataLabel="Entity"><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.EntityName.Spaced()</MudChip></MudTd>
+        <MudTd DataLabel="Entity id">@context.EntityId</MudTd>
+        <MudTd DataLabel="Action"><MudChip T="string" Size="Size.Small" Color="@context.Action.ToColor()">@context.Action.Spaced()</MudChip></MudTd>
+        <MudTd DataLabel="Reason">@(string.IsNullOrWhiteSpace(context.Reason) ? "—" : context.Reason)</MudTd>
+        <MudTd DataLabel="Performed by">@context.PerformedBy</MudTd>
+        <MudTd DataLabel="Self">
+            @if (context.IsSelfAction)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Color="Color.Warning" />
+            }
+        </MudTd>
+        <MudTd DataLabel="IP"><span class="mono">@(context.IpAddress ?? "—")</span></MudTd>
+        <MudTd DataLabel="When">@context.CreatedDate.ToString("dd MMM yyyy HH:mm")</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<AuditLogListItem> _logs = new();
+    private List<AuditLogListItem> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+    private EntityName? _entityFilter;
+    private ActionType? _actionFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _logs = (await Data.GetAuditLogsAsync()).OrderByDescending(a => a.CreatedDate).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<AuditLogListItem> q = _logs;
+        if (_entityFilter is not null) q = q.Where(a => a.EntityName == _entityFilter);
+        if (_actionFilter is not null) q = q.Where(a => a.Action == _actionFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var t = _search.Trim();
+            q = q.Where(a => a.PerformedBy.Contains(t, StringComparison.OrdinalIgnoreCase) ||
+                             (a.Reason?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+        _filtered = q.ToList();
+    }
+}

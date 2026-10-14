@@ -1,0 +1,73 @@
+@namespace SanaeeUI.Client.Shared
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Post a new service order</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" Model="_model">
+            <MudSelect T="int" @bind-Value="_model.UserId" Label="Customer" Required="true"
+                       RequiredError="Please choose a customer" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var c in Customers)
+                {
+                    <MudSelectItem T="int" Value="@c.Id">@c.Name — @c.Phone</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int" @bind-Value="_model.CategoryId" Label="Service category" Required="true"
+                       RequiredError="Please choose a category" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3">
+                @foreach (var c in Categories)
+                {
+                    <MudSelectItem T="int" Value="@c.Id">@c.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int" @bind-Value="_model.AddressId" Label="Address" Required="true"
+                       RequiredError="Please choose an address" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3">
+                @foreach (var a in Addresses)
+                {
+                    <MudSelectItem T="int" Value="@a.Id">@a.Title — @a.Region, @a.City</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField @bind-Value="_model.ProblemDescription" Label="Describe the problem"
+                          Lines="4" MaxLength="1000" Counter="1000" Required="true"
+                          RequiredError="Please describe the problem" Variant="Variant.Outlined" Class="mt-3" />
+
+            <MudDatePicker @bind-Date="_visiting" Label="Preferred visiting time"
+                           Variant="Variant.Outlined" Class="mt-3" />
+
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mt-3">
+                Photo attachment is supported by the API (ProblemPhoto). This demo focuses on the core flow.
+            </MudText>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="_busy">Post order</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public List<CustomerListItem> Customers { get; set; } = new();
+    [Parameter] public List<CategoryListItem> Categories { get; set; } = new();
+    [Parameter] public List<AddressListItem> Addresses { get; set; } = new();
+
+    private MudForm _form = default!;
+    private bool _busy;
+    private DateTime? _visiting = DateTime.Today.AddDays(1);
+    private readonly CreateOrderRequest _model = new();
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await _form.Validate();
+        if (!_form.IsValid) return;
+        _busy = true;
+        _model.VisitingTime = _visiting;
+        MudDialog.Close(DialogResult.Ok(_model));
+        _busy = false;
+    }
+}

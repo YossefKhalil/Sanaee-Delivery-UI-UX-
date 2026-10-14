@@ -1,0 +1,67 @@
+@page "/provider-categories"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Provider Skills</PageTitle>
+
+<PageHeader Title="Provider Skills" Subtitle="Categories each provider is qualified to serve"
+            Count="@($"{_filtered.Count} / {_regs.Count}")" />
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap gap-3">
+        <MudTextField @bind-Value="_search" Placeholder="Search provider or category..." Immediate="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:320px;" />
+        <MudSelect T="string?" @bind-Value="_categoryFilter" Label="Category" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;">
+            @foreach (var c in _categoryNames)
+            {
+                <MudSelectItem T="string?" Value="@c">@c</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>Provider</MudTh>
+        <MudTh>Category</MudTh>
+        <MudTh>Experience</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Provider">@context.Provider</MudTd>
+        <MudTd DataLabel="Category"><MudChip T="string" Size="Size.Small" Color="Color.Primary">@context.Category</MudChip></MudTd>
+        <MudTd DataLabel="Experience">@context.YearsOfExperience yrs</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<ProviderCategoryListItem> _regs = new();
+    private List<ProviderCategoryListItem> _filtered = new();
+    private List<string> _categoryNames = new();
+    private bool _loading = true;
+    private string? _search;
+    private string? _categoryFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _regs = (await Data.GetProviderCategoriesAsync()).OrderBy(r => r.Provider).ToList();
+        _categoryNames = _regs.Select(r => r.Category).Distinct().OrderBy(x => x).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<ProviderCategoryListItem> q = _regs;
+        if (_categoryFilter is not null) q = q.Where(r => r.Category == _categoryFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var t = _search.Trim();
+            q = q.Where(r => r.Provider.Contains(t, StringComparison.OrdinalIgnoreCase) || r.Category.Contains(t, StringComparison.OrdinalIgnoreCase));
+        }
+        _filtered = q.ToList();
+    }
+}

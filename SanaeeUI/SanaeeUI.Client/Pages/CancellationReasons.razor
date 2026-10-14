@@ -1,0 +1,68 @@
+@page "/cancellation-reasons"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Cancellation Reasons</PageTitle>
+
+<PageHeader Title="Cancellation Reasons" Subtitle="Reason options shown when orders or offers are cancelled"
+            Count="@($"{_filtered.Count} / {_reasons.Count}")" />
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap gap-3">
+        <MudTextField @bind-Value="_search" Placeholder="Search reason..." Immediate="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:320px;" />
+        <MudSelect T="UserType?" @bind-Value="_userFilter" Label="Applies to" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:200px;">
+            @foreach (var u in Enum.GetValues<UserType>())
+            {
+                <MudSelectItem T="UserType?" Value="@u">@u.Spaced()</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>#</MudTh>
+        <MudTh>Reason</MudTh>
+        <MudTh>Applies to</MudTh>
+        <MudTh>Status</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#">@context.Id</MudTd>
+        <MudTd DataLabel="Reason">@context.Text</MudTd>
+        <MudTd DataLabel="Applies to"><MudChip T="string" Size="Size.Small" Color="@context.ApplicableTo.ToColor()">@context.ApplicableTo.Spaced()</MudChip></MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Size="Size.Small" Color="@(context.IsActive ? Color.Success : Color.Error)">
+                @(context.IsActive ? "Active" : "Disabled")
+            </MudChip>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<CancelReasonListItem> _reasons = new();
+    private List<CancelReasonListItem> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+    private UserType? _userFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _reasons = (await Data.GetCancelReasonsAsync()).OrderBy(r => r.Id).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<CancelReasonListItem> q = _reasons;
+        if (_userFilter is not null) q = q.Where(r => r.ApplicableTo == _userFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+            q = q.Where(r => r.Text.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));
+        _filtered = q.ToList();
+    }
+}

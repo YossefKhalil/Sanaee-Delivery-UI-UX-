@@ -1,0 +1,63 @@
+@using SanaeeUI.Client.Theme
+@inject NavigationManager Navigation
+
+@if (_items.Count > 0)
+{
+    <MudBreadcrumbs Items="_items" Class="sanaee-breadcrumbs pa-0 mb-2" Separator="@("›")" />
+}
+
+@code {
+    private readonly List<BreadcrumbItem> _items = new();
+
+    private static readonly Dictionary<string, string> Labels = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["orders"] = "Orders",
+        ["offers"] = "Offers",
+        ["chat"] = "Messages",
+        ["customers"] = "Customers",
+        ["providers"] = "Providers",
+        ["users"] = "Users",
+        ["documents"] = "Provider Documents",
+        ["applications"] = "Applications",
+        ["provider-status"] = "Provider Status",
+        ["reviews"] = "Reviews",
+        ["categories"] = "Categories",
+        ["provider-categories"] = "Provider Skills",
+        ["cancellation-reasons"] = "Cancellation Reasons",
+        ["wallets"] = "Wallets",
+        ["transactions"] = "Transactions",
+        ["payments"] = "Payments",
+        ["order-history"] = "Order Timeline",
+        ["addresses"] = "Addresses",
+        ["phones"] = "Phones",
+        ["audit"] = "Audit Logs",
+        ["not-found"] = "Not Found"
+    };
+
+    protected override void OnParametersSet() => Build();
+
+    private void Build()
+    {
+        _items.Clear();
+
+        var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var segments = relative.Split('?', '#')[0]
+            .Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (segments.Length == 0)
+        {
+            return;
+        }
+
+        _items.Add(new BreadcrumbItem("Dashboard", "", false));
+
+        var path = "";
+        for (var i = 0; i < segments.Length; i++)
+        {
+            path += "/" + segments[i];
+            var label = Labels.TryGetValue(segments[i], out var v) ? v : segments[i];
+            var isLast = i == segments.Length - 1;
+            _items.Add(new BreadcrumbItem(label, path, isLast));
+        }
+    }
+}

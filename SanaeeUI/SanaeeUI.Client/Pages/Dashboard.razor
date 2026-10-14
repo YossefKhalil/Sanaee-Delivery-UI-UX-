@@ -1,0 +1,135 @@
+@page "/"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+@inject AppState AppState
+
+<PageTitle>Sanaee Delivery · Dashboard</PageTitle>
+
+<PageHeader Title="Operations Dashboard"
+            Subtitle="Live overview of the Sanaee Delivery home-services marketplace" />
+
+@if (_stats is null)
+{
+    <MudGrid>
+        @for (var i = 0; i < 8; i++)
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <MudSkeleton Height="104px" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudPaper Class="hero-card pa-6 mb-6">
+        <div class="d-flex flex-wrap align-center justify-space-between gap-3">
+            <div>
+                <MudText Typo="Typo.h5" Style="font-weight:700; color:#fff;">Welcome back to Sanaee Delivery</MudText>
+                <MudText Style="color:#d7f5f5;">You are viewing @(_stats.TotalOrders) orders, @(_stats.TotalProviders) providers and @(_stats.TotalCustomers) customers.</MudText>
+            </div>
+            <div class="d-flex gap-3">
+                <div>
+                    <MudText Style="color:#bfe9e9;" Typo="Typo.caption">GROSS REVENUE</MudText>
+                    <MudText Typo="Typo.h5" Style="color:#fff; font-weight:700;">@_stats.TotalRevenue.ToString("N0") EGP</MudText>
+                </div>
+                <MudDivider Vertical="true" DividerType="DividerType.Middle" Style="background:#ffffff55;" />
+                <div>
+                    <MudText Style="color:#bfe9e9;" Typo="Typo.caption">AVG RATING</MudText>
+                    <MudText Typo="Typo.h5" Style="color:#fff; font-weight:700;">@_stats.AverageRating.ToString("0.0") ★</MudText>
+                </div>
+            </div>
+        </div>
+    </MudPaper>
+
+    <MudGrid Class="mb-2">
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="Total Orders" Value="@_stats.TotalOrders.ToString()" Icon="@Icons.Material.Filled.ReceiptLong" Color="Color.Primary" Caption="@($"{_stats.OpenOrders} awaiting offers")" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="In Progress" Value="@_stats.InProgressOrders.ToString()" Icon="@Icons.Material.Filled.Build" Color="Color.Info" Caption="Active jobs on site" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="Completed" Value="@_stats.CompletedOrders.ToString()" Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Caption="Successfully delivered" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="Cancelled" Value="@_stats.CancelledOrders.ToString()" Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Caption="Needs review" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="Providers" Value="@_stats.TotalProviders.ToString()" Icon="@Icons.Material.Filled.Engineering" Color="Color.Primary" Caption="@($"{_stats.OnlineProviders} online now")" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="Customers" Value="@_stats.TotalCustomers.ToString()" Icon="@Icons.Material.Filled.People" Color="Color.Info" Caption="Registered accounts" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="Pending Documents" Value="@_stats.PendingDocuments.ToString()" Icon="@Icons.Material.Filled.Description" Color="Color.Warning" Caption="KYC awaiting review" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <StatCard Title="Wallet Liability" Value="@(_stats.WalletLiability.ToString("N0") + " EGP")" Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Secondary" Caption="Total customer balance" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">Revenue · last 7 days</MudText>
+                <MudChart T="double" ChartType="ChartType.Line" ChartSeries="@_revenueSeries" XAxisLabels="@_revenueLabels"
+                          Width="100%" Height="300px" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Height="100%" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">Orders by status</MudText>
+                <MudChart T="double" ChartType="ChartType.Donut" InputData="@_statusData" InputLabels="@_statusLabels"
+                          Width="100%" Height="300px" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">Orders by category</MudText>
+                <MudChart T="double" ChartType="ChartType.Bar" InputData="@_categoryData" InputLabels="@_categoryLabels"
+                          Width="100%" Height="300px" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">Cancellation reasons (top)</MudText>
+                <MudChart T="double" ChartType="ChartType.Bar" InputData="@_reasonData" InputLabels="@_reasonLabels"
+                          Width="100%" Height="300px" />
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private DashboardStats? _stats;
+
+    private List<ChartSeries<double>> _revenueSeries = new();
+    private string[] _revenueLabels = Array.Empty<string>();
+    private double[] _statusData = Array.Empty<double>();
+    private string[] _statusLabels = Array.Empty<string>();
+    private double[] _categoryData = Array.Empty<double>();
+    private string[] _categoryLabels = Array.Empty<string>();
+    private double[] _reasonData = Array.Empty<double>();
+    private string[] _reasonLabels = Array.Empty<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stats = await Data.GetDashboardStatsAsync();
+
+        _revenueLabels = _stats.RevenueTrend.Select(p => p.Label).ToArray();
+        _revenueSeries = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = "Revenue (EGP)", Data = _stats.RevenueTrend.Select(p => (double)p.Value).ToArray() }
+        };
+
+        _statusData = _stats.OrdersByStatus.Select(s => (double)s.Count).ToArray();
+        _statusLabels = _stats.OrdersByStatus.Select(s => s.Status.Spaced()).ToArray();
+
+        _categoryData = _stats.OrdersByCategory.Select(c => (double)c.Count).ToArray();
+        _categoryLabels = _stats.OrdersByCategory.Select(c => c.Category).ToArray();
+
+        var topReasons = _stats.CancellationReasons.OrderByDescending(r => r.Count).Take(6).ToList();
+        _reasonData = topReasons.Select(r => (double)r.Count).ToArray();
+        _reasonLabels = topReasons.Select(r => r.Reason).ToArray();
+    }
+}

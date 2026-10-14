@@ -1,0 +1,96 @@
+@page "/reviews"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Reviews</PageTitle>
+
+<PageHeader Title="Reviews" Subtitle="Mutual ratings between customers and providers"
+            Count="@($"{_filtered.Count} / {_reviews.Count}")" />
+
+<MudGrid Class="mb-3">
+    <MudItem xs="12" md="4">
+        <StatCard Title="Average rating" Value="@_average.ToString("0.0")" Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Caption="@($"{_reviews.Count} reviews")" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <StatCard Title="5-star reviews" Value="@_fiveStar.ToString()" Icon="@Icons.Material.Filled.ThumbUp" Color="Color.Success" Caption="Highest satisfaction" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <StatCard Title="Low (≤2★)" Value="@_low.ToString()" Icon="@Icons.Material.Filled.Report" Color="Color.Error" Caption="Needs attention" />
+    </MudItem>
+</MudGrid>
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap align-center gap-3">
+        <MudTextField @bind-Value="_search" Placeholder="Search reviewer, reviewee or comment..." Immediate="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:320px;" />
+        <MudRating @bind-SelectedValue="_minRating" MaxValue="5" />
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">min @_minRating ★</MudText>
+    </div>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>Reviewee</MudTh>
+        <MudTh>Reviewer</MudTh>
+        <MudTh>Rating</MudTh>
+        <MudTh>Comment</MudTh>
+        <MudTh>Order</MudTh>
+        <MudTh>Date</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Reviewee">@context.Reviewee</MudTd>
+        <MudTd DataLabel="Reviewer">@context.Reviewer</MudTd>
+        <MudTd DataLabel="Rating"><MudRating SelectedValue="@context.Rating" ReadOnly="true" Size="Size.Small" /></MudTd>
+        <MudTd DataLabel="Comment">
+            <span class="text-truncate-2" style="max-width:360px;">@context.Comment</span>
+            @if (context.IsEdited)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text">edited</MudChip>
+            }
+        </MudTd>
+        <MudTd DataLabel="Order">#@context.OrderId</MudTd>
+        <MudTd DataLabel="Date">@context.CreatedAt.ToString("dd MMM yyyy")</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<ReviewListItem> _reviews = new();
+    private List<ReviewListItem> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+    private int _minRating;
+    private double _average;
+    private int _fiveStar;
+    private int _low;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _reviews = (await Data.GetReviewsAsync()).OrderByDescending(r => r.CreatedAt).ToList();
+        if (_reviews.Count > 0)
+        {
+            _average = _reviews.Average(r => r.Rating);
+            _fiveStar = _reviews.Count(r => r.Rating == 5);
+            _low = _reviews.Count(r => r.Rating <= 2);
+        }
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<ReviewListItem> q = _reviews.Where(r => r.Rating >= _minRating);
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var t = _search.Trim();
+            q = q.Where(r =>
+                r.Reviewer.Contains(t, StringComparison.OrdinalIgnoreCase) ||
+                r.Reviewee.Contains(t, StringComparison.OrdinalIgnoreCase) ||
+                (r.Comment?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+        _filtered = q.ToList();
+    }
+}

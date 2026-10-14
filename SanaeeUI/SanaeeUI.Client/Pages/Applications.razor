@@ -1,0 +1,68 @@
+@page "/applications"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Provider Applications</PageTitle>
+
+<PageHeader Title="Provider Applications" Subtitle="Onboarding review history for provider accounts"
+            Count="@($"{_filtered.Count} / {_history.Count}")" />
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap gap-3">
+        <MudTextField @bind-Value="_search" Placeholder="Search provider..." Immediate="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:300px;" />
+        <MudSelect T="ApplicationStatus?" @bind-Value="_statusFilter" Label="Status" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;">
+            @foreach (var s in Enum.GetValues<ApplicationStatus>())
+            {
+                <MudSelectItem T="ApplicationStatus?" Value="@s">@s.Spaced()</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>#</MudTh>
+        <MudTh>Provider</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Notes</MudTh>
+        <MudTh>Changed by</MudTh>
+        <MudTh>Changed at</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#">@context.Id</MudTd>
+        <MudTd DataLabel="Provider">@context.Provider</MudTd>
+        <MudTd DataLabel="Status"><MudChip T="string" Size="Size.Small" Color="@context.Status.ToColor()">@context.Status.Spaced()</MudChip></MudTd>
+        <MudTd DataLabel="Notes">@(string.IsNullOrWhiteSpace(context.Notes) ? "—" : context.Notes)</MudTd>
+        <MudTd DataLabel="Changed by">@context.ChangedBy</MudTd>
+        <MudTd DataLabel="Changed at">@context.ChangedAt.ToString("dd MMM yyyy HH:mm")</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<ApplicationHistoryListItem> _history = new();
+    private List<ApplicationHistoryListItem> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+    private ApplicationStatus? _statusFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _history = (await Data.GetApplicationHistoriesAsync()).OrderByDescending(h => h.ChangedAt).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<ApplicationHistoryListItem> q = _history;
+        if (_statusFilter is not null) q = q.Where(h => h.Status == _statusFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+            q = q.Where(h => h.Provider.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));
+        _filtered = q.ToList();
+    }
+}

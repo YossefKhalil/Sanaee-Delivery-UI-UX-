@@ -1,0 +1,67 @@
+@namespace SanaeeUI.Client.Shared
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Submit a new offer</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" Model="_model">
+            <MudSelect T="int" @bind-Value="_model.OrderId" Label="Order" Required="true" RequiredError="Choose an order"
+                       Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var o in Orders)
+                {
+                    <MudSelectItem T="int" Value="@o.Id">Order #@o.Id — @o.Category (@o.Customer)</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int" @bind-Value="_model.ProviderId" Label="Provider" Required="true" RequiredError="Choose a provider"
+                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3">
+                @foreach (var p in Providers)
+                {
+                    <MudSelectItem T="int" Value="@p.Id">@p.Name (@p.AverageRating ★)</MudSelectItem>
+                }
+            </MudSelect>
+
+            <div class="d-flex gap-3 mt-3">
+                <MudNumericField T="decimal" @bind-Value="_model.LaborCost" Label="Labor cost (EGP)" Required="true"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" />
+                <MudNumericField T="decimal?" @bind-Value="_model.MaterialCost" Label="Materials (optional)"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" />
+            </div>
+
+            <MudDatePicker @bind-Date="_arrivalDate" Label="Arrival date" Variant="Variant.Outlined" Class="mt-3" />
+            <MudTimePicker @bind-Time="_arrivalTime" Label="Arrival time" Variant="Variant.Outlined" Class="mt-3" />
+
+            <MudTextField @bind-Value="_model.Notes" Label="Notes (optional)" Lines="2" MaxLength="500"
+                          Variant="Variant.Outlined" Class="mt-3" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="_busy">Submit offer</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public List<ProviderListItem> Providers { get; set; } = new();
+    [Parameter] public List<OrderListItem> Orders { get; set; } = new();
+
+    private MudForm _form = default!;
+    private bool _busy;
+    private DateTime? _arrivalDate = DateTime.Today.AddDays(1);
+    private TimeSpan? _arrivalTime = new TimeSpan(10, 0, 0);
+    private readonly CreateOfferRequest _model = new();
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await _form.Validate();
+        if (!_form.IsValid) return;
+        _busy = true;
+        _model.ArrivalTime = (_arrivalDate ?? DateTime.Today) + (_arrivalTime ?? TimeSpan.Zero);
+        MudDialog.Close(DialogResult.Ok(_model));
+        _busy = false;
+    }
+}

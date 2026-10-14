@@ -1,0 +1,21 @@
+@namespace SanaeeUI.Client.Shared
+
+<div class="empty-state">
+    <MudIcon Icon="@Icon" Size="Size.Large" />
+    <MudText Typo="Typo.subtitle1">@Title</MudText>
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">@Message</MudText>
+    }
+    @if (Action is not null)
+    {
+        <div class="mt-2">@Action</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Inbox;
+    [Parameter] public string Title { get; set; } = "Nothing here yet";
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public RenderFragment? Action { get; set; }
+}

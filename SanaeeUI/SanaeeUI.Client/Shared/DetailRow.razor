@@ -1,0 +1,11 @@
+@namespace SanaeeUI.Client.Shared
+
+<div class="detail-row">
+    <span class="detail-label">@Label</span>
+    <span class="detail-value">@Value</span>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string? Value { get; set; }
+}

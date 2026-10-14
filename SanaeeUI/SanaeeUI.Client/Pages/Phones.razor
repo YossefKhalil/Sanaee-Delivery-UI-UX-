@@ -1,0 +1,58 @@
+@page "/phones"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Phone Numbers</PageTitle>
+
+<PageHeader Title="Phone Numbers" Subtitle="Registered contact numbers per user"
+            Count="@($"{_filtered.Count} / {_phones.Count}")" />
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <MudTextField @bind-Value="_search" Placeholder="Search phone or user id..." Immediate="true"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>#</MudTh>
+        <MudTh>User id</MudTh>
+        <MudTh>Phone number</MudTh>
+        <MudTh>Default</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#">@context.Id</MudTd>
+        <MudTd DataLabel="User id">@context.UserId</MudTd>
+        <MudTd DataLabel="Phone number"><span class="mono">@context.PhoneNumber</span></MudTd>
+        <MudTd DataLabel="Default">
+            @if (context.IsDefault)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Success">Default</MudChip>
+            }
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<PhoneListItem> _phones = new();
+    private List<PhoneListItem> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _phones = (await Data.GetPhonesAsync()).OrderBy(p => p.UserId).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        if (string.IsNullOrWhiteSpace(_search)) { _filtered = _phones.ToList(); return; }
+        var t = _search.Trim();
+        _filtered = _phones.Where(p => p.PhoneNumber.Contains(t) || p.UserId.ToString().Contains(t)).ToList();
+    }
+}

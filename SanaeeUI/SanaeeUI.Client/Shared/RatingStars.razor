@@ -1,0 +1,20 @@
+@namespace SanaeeUI.Client.Shared
+
+<div class="d-flex align-center gap-1 rating-gold">
+    <MudRating SelectedValue="@((int)Math.Round(Value))" MaxValue="5" ReadOnly="true" Size="@Size" />
+    @if (ShowValue)
+    {
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Value.ToString("0.0")</MudText>
+    }
+    @if (Count is not null)
+    {
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">(@Count)</MudText>
+    }
+</div>
+
+@code {
+    [Parameter] public double Value { get; set; }
+    [Parameter] public int? Count { get; set; }
+    [Parameter] public bool ShowValue { get; set; } = true;
+    [Parameter] public Size Size { get; set; } = Size.Small;
+}

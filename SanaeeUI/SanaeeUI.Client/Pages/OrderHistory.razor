@@ -1,0 +1,72 @@
+@page "/order-history"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Order History</PageTitle>
+
+<PageHeader Title="Order History" Subtitle="Lifecycle transitions for every service order"
+            Count="@($"{_filtered.Count} / {_history.Count}")" />
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap gap-3">
+        <MudSelect T="int?" @bind-Value="_orderFilter" Label="Order" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:200px;">
+            @foreach (var o in _orders)
+            {
+                <MudSelectItem T="int?" Value="@o">Order #@o</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="OrderStatus?" @bind-Value="_statusFilter" Label="Status" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;">
+            @foreach (var s in Enum.GetValues<OrderStatus>())
+            {
+                <MudSelectItem T="OrderStatus?" Value="@s">@s.Spaced()</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>Order</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Notes</MudTh>
+        <MudTh>Reason</MudTh>
+        <MudTh>By</MudTh>
+        <MudTh>When</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Order">#@context.OrderId</MudTd>
+        <MudTd DataLabel="Status"><MudChip T="string" Size="Size.Small" Color="@context.Status.ToColor()" Icon="@context.Status.ToIcon()">@context.Status.Spaced()</MudChip></MudTd>
+        <MudTd DataLabel="Notes">@(string.IsNullOrWhiteSpace(context.Notes) ? "—" : context.Notes)</MudTd>
+        <MudTd DataLabel="Reason">@(string.IsNullOrWhiteSpace(context.Reason) ? "—" : context.Reason)</MudTd>
+        <MudTd DataLabel="By">@context.By</MudTd>
+        <MudTd DataLabel="When">@context.CreatedAt.ToString("dd MMM yyyy HH:mm")</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<OrderStatusHistoryListItem> _history = new();
+    private List<OrderStatusHistoryListItem> _filtered = new();
+    private List<int> _orders = new();
+    private bool _loading = true;
+    private int? _orderFilter;
+    private OrderStatus? _statusFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _history = (await Data.GetOrderStatusHistoriesAsync()).OrderByDescending(h => h.CreatedAt).ToList();
+        _orders = _history.Select(h => h.OrderId).Distinct().OrderBy(x => x).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<OrderStatusHistoryListItem> q = _history;
+        if (_orderFilter is not null) q = q.Where(h => h.OrderId == _orderFilter);
+        if (_statusFilter is not null) q = q.Where(h => h.Status == _statusFilter);
+        _filtered = q.ToList();
+    }
+}

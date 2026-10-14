@@ -1,0 +1,124 @@
+@page "/offers"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+@inject ISnackbar Snackbar
+
+<PageTitle>Sanaee Delivery · Offers</PageTitle>
+
+<PageHeader Title="Offers" Subtitle="Provider bids across all service orders"
+            Count="@($"{_filtered.Count} / {_offers.Count}")">
+    <Actions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="CreateOfferAsync">Submit offer</MudButton>
+    </Actions>
+</PageHeader>
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="_search" Placeholder="Search provider or order id..." Immediate="true"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudSelect T="OfferStatus?" @bind-Value="_statusFilter" Label="Status" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var s in Enum.GetValues<OfferStatus>())
+                {
+                    <MudSelectItem T="OfferStatus?" Value="@s">@s.Spaced()</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudSelect T="int?" @bind-Value="_orderFilter" Label="Order" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var o in _orders)
+                {
+                    <MudSelectItem T="int?" Value="@o">Order #@o</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>#</MudTh>
+        <MudTh>Order</MudTh>
+        <MudTh>Provider</MudTh>
+        <MudTh>Labor</MudTh>
+        <MudTh>Materials</MudTh>
+        <MudTh>Total</MudTh>
+        <MudTh>Arrival</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Expires</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#">@context.Id</MudTd>
+        <MudTd DataLabel="Order">@context.OrderId</MudTd>
+        <MudTd DataLabel="Provider">@context.Provider</MudTd>
+        <MudTd DataLabel="Labor">@context.LaborCost.ToString("N0")</MudTd>
+        <MudTd DataLabel="Materials">@(context.MaterialCost?.ToString("N0") ?? "—")</MudTd>
+        <MudTd DataLabel="Total"><MoneyText Amount="@context.Total" /></MudTd>
+        <MudTd DataLabel="Arrival">@context.ArrivalTime.ToString("dd MMM HH:mm")</MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Size="Size.Small" Color="@context.Status.ToColor()">@context.Status.Spaced()</MudChip>
+        </MudTd>
+        <MudTd DataLabel="Expires">@context.ExpiresAt.ToString("dd MMM HH:mm")</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+    <NoRecordsContent>
+        <EmptyState Icon="@Icons.Material.Filled.LocalOffer" Title="No offers found"
+                    Message="No offers match the current filters." />
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    private List<OfferListItem> _offers = new();
+    private List<OfferListItem> _filtered = new();
+    private List<int> _orders = new();
+    private bool _loading = true;
+    private string? _search;
+    private OfferStatus? _statusFilter;
+    private int? _orderFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _offers = (await Data.GetOffersAsync()).OrderByDescending(o => o.Id).ToList();
+        _orders = _offers.Select(o => o.OrderId).Distinct().OrderBy(x => x).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<OfferListItem> q = _offers;
+        if (_statusFilter is not null) q = q.Where(o => o.Status == _statusFilter);
+        if (_orderFilter is not null) q = q.Where(o => o.OrderId == _orderFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var t = _search.Trim();
+            q = q.Where(o => o.Provider.Contains(t, StringComparison.OrdinalIgnoreCase) || o.OrderId.ToString().Contains(t));
+        }
+        _filtered = q.ToList();
+    }
+
+    private async Task CreateOfferAsync()
+    {
+        var providers = (await Data.GetProvidersAsync()).Where(p => p.Status == ProviderStatus.Active).ToList();
+        var orders = (await Data.GetOrdersAsync()).Where(o => o.Status == OrderStatus.Pending).ToList();
+        var parameters = new DialogParameters { ["Providers"] = providers, ["Orders"] = orders };
+        var dialog = await DialogService.ShowAsync<CreateOfferDialog>("Submit a new offer", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: CreateOfferRequest request })
+        {
+            await Data.CreateOfferAsync(request);
+            Snackbar.Add("Offer submitted.", Severity.Success);
+            _offers = (await Data.GetOffersAsync()).OrderByDescending(o => o.Id).ToList();
+            ApplyFilters();
+        }
+    }
+
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+}

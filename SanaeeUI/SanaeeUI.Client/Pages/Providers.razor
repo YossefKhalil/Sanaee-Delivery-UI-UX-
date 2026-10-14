@@ -1,0 +1,135 @@
+@page "/providers"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+@inject ISnackbar Snackbar
+
+<PageTitle>Sanaee Delivery · Providers</PageTitle>
+
+<PageHeader Title="Providers" Subtitle="Service professionals on the platform"
+            Count="@($"{_filtered.Count} / {_providers.Count}")" />
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="_search" Placeholder="Search name or national number..." Immediate="true"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudSelect T="ProviderStatus?" @bind-Value="_statusFilter" Label="Status" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var s in Enum.GetValues<ProviderStatus>())
+                {
+                    <MudSelectItem T="ProviderStatus?" Value="@s">@s.Spaced()</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" md="3" Class="d-flex align-center">
+            <MudSwitch T="bool" @bind-Value="_onlineOnly" Label="Online only" Color="Color.Success" />
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>Provider</MudTh>
+        <MudTh>National ID</MudTh>
+        <MudTh>Skills</MudTh>
+        <MudTh>Rating</MudTh>
+        <MudTh>Completed</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Availability</MudTh>
+        <MudTh />
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Provider">
+            <div class="d-flex align-center gap-2">
+                <EntityAvatar Name="@context.Name" Size="Size.Small" Color="Color.Primary" />
+                <span>@context.Name</span>
+            </div>
+        </MudTd>
+        <MudTd DataLabel="National ID"><span class="mono">@context.NationalNumber</span></MudTd>
+        <MudTd DataLabel="Skills">@context.CategoriesCount</MudTd>
+        <MudTd DataLabel="Rating">
+            @if (context.AverageRating is not null)
+            {
+                <RatingStars Value="@context.AverageRating.Value" Count="@context.TotalReviewCount" ShowValue="true" />
+            }
+            else
+            {
+                <span class="mud-text-secondary">No reviews</span>
+            }
+        </MudTd>
+        <MudTd DataLabel="Completed">@context.CompletedOrders</MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Size="Size.Small" Color="@context.Status.ToColor()">@context.Status.Spaced()</MudChip>
+        </MudTd>
+        <MudTd DataLabel="Availability">
+            <MudSwitch T="bool" Value="context.IsAvailable" Color="Color.Success"
+                       ValueChanged="@(v => ToggleAsync(context, v))" />
+        </MudTd>
+        <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" OnClick="@(() => ShowAsync(context))" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<ProviderListItem> _providers = new();
+    private List<ProviderListItem> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+    private ProviderStatus? _statusFilter;
+    private bool _onlineOnly;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _providers = (await Data.GetProvidersAsync()).OrderByDescending(p => p.AverageRating).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<ProviderListItem> q = _providers;
+        if (_statusFilter is not null) q = q.Where(p => p.Status == _statusFilter);
+        if (_onlineOnly) q = q.Where(p => p.IsAvailable);
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var t = _search.Trim();
+            q = q.Where(p => p.Name.Contains(t, StringComparison.OrdinalIgnoreCase) || p.NationalNumber.Contains(t));
+        }
+        _filtered = q.ToList();
+    }
+
+    private async Task ToggleAsync(ProviderListItem provider, bool available)
+    {
+        await Data.SetProviderAvailabilityAsync(provider.Id, available);
+        provider.IsAvailable = available;
+        Snackbar.Add($"{provider.Name} is now {(available ? "online" : "offline")}.", Severity.Info);
+        ApplyFilters();
+    }
+
+    private async Task ShowAsync(ProviderListItem provider)
+    {
+        var docs = (await Data.GetDocumentsAsync()).Where(d => d.Provider == provider.Name).ToList();
+        var skills = (await Data.GetProviderCategoriesAsync()).Where(s => s.Provider == provider.Name).ToList();
+        var reviews = (await Data.GetReviewsAsync()).Where(r => r.Reviewee == provider.Name).ToList();
+        var parameters = new DialogParameters
+        {
+            ["Provider"] = provider,
+            ["Documents"] = docs,
+            ["Skills"] = skills,
+            ["Reviews"] = reviews
+        };
+        await DialogService.ShowAsync<ProviderDetailsDialog>("Provider profile", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+    }
+
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+
+    private static string Initials(string name) =>
+        string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
+}

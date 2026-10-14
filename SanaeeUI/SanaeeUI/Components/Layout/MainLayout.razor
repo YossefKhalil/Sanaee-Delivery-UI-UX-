@@ -1,0 +1,141 @@
+﻿@inherits LayoutComponentBase
+@implements IDisposable
+@inject AppState AppState
+@using SanaeeUI.Client.Theme
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<style>@_cssVariables</style>
+
+<MudLayout>
+    <MudAppBar Elevation="0" Dense="false" Style="@_appbarStyle">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@DrawerToggle" />
+
+        <div class="sanaee-appbar-brand">
+            <MudIcon Icon="@Icons.Material.Filled.Handyman" Color="Color.Inherit" />
+            <MudText Typo="Typo.h6" Class="sanaee-appbar-title">Sanaee Delivery</MudText>
+            <span class="sanaee-appbar-gold-line"></span>
+        </div>
+
+        <MudChip T="string" Size="Size.Small" Class="ml-3 d-none d-sm-flex" Style="font-weight:600;"
+                 Color="@(AppState.Mode == DataMode.Live ? Color.Success : Color.Default)"
+                 Icon="@(AppState.Mode == DataMode.Live ? Icons.Material.Filled.Cloud : Icons.Material.Filled.Science)">
+            @(AppState.Mode == DataMode.Live ? "Live API" : "Demo data")
+        </MudChip>
+
+        <MudSpacer />
+
+        <MudTextField @bind-Value="_globalSearch" Placeholder="Search orders, providers, customers…"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Margin="Margin.Dense" Variant="Variant.Outlined" Immediate="true"
+                      Class="sanaee-global-search d-none d-md-flex" @onkeydown="OnSearchKeyDown" />
+
+        <MudButton Variant="Variant.Outlined" Color="Color.Inherit" Size="Size.Small" Class="ml-2 d-none d-sm-flex"
+                   StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="@ToggleModeAsync">
+            @(AppState.Mode == DataMode.Live ? "Use demo data" : "Connect to API")
+        </MudButton>
+
+        <MudMenu Icon="@Icons.Material.Filled.NotificationsNone" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight" Dense="true">
+            <ChildContent>
+                <MudText Typo="Typo.overline" Class="px-4 pt-3 mud-text-secondary">Notifications</MudText>
+                @foreach (var n in _notifications)
+                {
+                    <MudMenuItem Icon="@n.Icon" IconColor="@n.Color" Href="@n.Href">
+                        <div>
+                            <MudText Typo="Typo.body2">@n.Text</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@n.When</MudText>
+                        </div>
+                    </MudMenuItem>
+                }
+            </ChildContent>
+        </MudMenu>
+
+        <MudIconButton Icon="@DarkLightModeButtonIcon" Color="Color.Inherit" OnClick="@DarkModeToggle" Title="Toggle theme" />
+
+        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true">
+            <ActivatorContent>
+                <MudAvatar Size="Size.Small" Class="cursor-pointer"
+                           Style="background:var(--sanaee-secondary); color:var(--sanaee-on-secondary); font-weight:700;">
+                    SA
+                </MudAvatar>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Icon="@Icons.Material.Filled.Person">Profile</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.Settings">Settings</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.Logout">Sign out</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Width="272px"
+               Breakpoint="Breakpoint.Md" Variant="@DrawerVariant.Responsive">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent Class="sanaee-main pa-4 pa-md-6">
+        <Breadcrumbs />
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">?</span>
+</div>
+
+@code {
+    private sealed record Notice(string Text, string When, string Icon, Color Color, string Href);
+
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = false;
+    private string _globalSearch = string.Empty;
+    private MudTheme _theme = SanaeeTheme.Create();
+
+    private string _cssVariables => SanaeeTheme.CssVariables(SanaeeTheme.Current(_isDarkMode));
+
+    private string _appbarStyle =>
+        "background-image:none; background-color:var(--sanaee-appbar); color:var(--sanaee-appbar-text); " +
+        "box-shadow: inset 0 -2px 0 var(--sanaee-gold);";
+
+    private readonly List<Notice> _notifications = new()
+    {
+        new("3 provider documents awaiting review", "2m ago", Icons.Material.Filled.Description, Color.Warning, "documents"),
+        new("5 new offers submitted on active orders", "18m ago", Icons.Material.Filled.LocalOffer, Color.Info, "offers"),
+        new("Provider suspended after complaints", "1h ago", Icons.Material.Filled.Block, Color.Error, "provider-status"),
+        new("Wallet liability recomputed", "3h ago", Icons.Material.Filled.AccountBalanceWallet, Color.Success, "wallets")
+    };
+
+    protected override void OnInitialized()
+    {
+        AppState.Changed += OnStateChanged;
+    }
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+    private void DrawerToggle() => _drawerOpen = !_drawerOpen;
+    private void DarkModeToggle() => _isDarkMode = !_isDarkMode;
+
+    private void OnSearchKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && !string.IsNullOrWhiteSpace(_globalSearch))
+        {
+            NavigationManager.NavigateTo($"orders?q={Uri.EscapeDataString(_globalSearch.Trim())}");
+        }
+    }
+
+    private async Task ToggleModeAsync()
+    {
+        AppState.ToggleMode();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    public void Dispose() => AppState.Changed -= OnStateChanged;
+
+    public string DarkLightModeButtonIcon => _isDarkMode ? Icons.Material.Rounded.LightMode : Icons.Material.Rounded.DarkMode;
+}

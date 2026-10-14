@@ -1,0 +1,32 @@
+@namespace SanaeeUI.Client.Shared
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_reason" Label="Reason" Required="true" RequiredError="A reason is required"
+                          Lines="3" MaxLength="500" Variant="Variant.Outlined"
+                          Placeholder="Explain briefly why..." />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitAsync">Confirm</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string Title { get; set; } = "Provide a reason";
+
+    private MudForm _form = default!;
+    private string _reason = string.Empty;
+
+    private async Task SubmitAsync()
+    {
+        await _form.Validate();
+        if (_form.IsValid) MudDialog.Close(DialogResult.Ok(_reason.Trim()));
+    }
+}

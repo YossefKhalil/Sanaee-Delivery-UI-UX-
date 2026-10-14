@@ -1,0 +1,164 @@
+@page "/orders"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Sanaee Delivery · Orders</PageTitle>
+
+<PageHeader Title="Orders" Subtitle="Service requests, bids and fulfilment"
+            Count="@($"{_filtered.Count} / {_orders.Count}")">
+    <Actions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="CreateOrderAsync">New order</MudButton>
+    </Actions>
+</PageHeader>
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="_search" Placeholder="Search customer, category or problem..."
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudSelect T="OrderStatus?" @bind-Value="_statusFilter" Label="Status" Clearable="true"
+                       Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var s in Enum.GetValues<OrderStatus>())
+                {
+                    <MudSelectItem T="OrderStatus?" Value="@s">@s.Spaced()</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudSelect T="string" @bind-Value="_categoryFilter" Label="Category" Clearable="true"
+                       Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var c in _orders.Select(o => o.Category).Distinct().OrderBy(x => x))
+                {
+                    <MudSelectItem T="string" Value="@c">@c</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Dense="false"
+          Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>#</MudTh>
+        <MudTh>Request</MudTh>
+        <MudTh>Customer</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Offers</MudTh>
+        <MudTh>Total</MudTh>
+        <MudTh>Created</MudTh>
+        <MudTh />
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#">@context.Id</MudTd>
+        <MudTd DataLabel="Request">
+            <div class="text-truncate-2" style="max-width:340px;">@context.ProblemDescription</div>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Secondary">@context.Category</MudChip>
+        </MudTd>
+        <MudTd DataLabel="Customer">
+            @context.Customer
+            <div class="mud-text-secondary" style="font-size:.75rem;">@context.Address</div>
+        </MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Size="Size.Small" Color="@context.Status.ToColor()"
+                     Icon="@context.Status.ToIcon()">@context.Status.Spaced()</MudChip>
+        </MudTd>
+        <MudTd DataLabel="Offers">@context.OffersCount</MudTd>
+        <MudTd DataLabel="Total">
+            <MoneyText Amount="@context.AcceptedOfferTotal" />
+        </MudTd>
+        <MudTd DataLabel="Created">@context.CreatedAt.ToString("dd MMM, HH:mm")</MudTd>
+        <MudTd DataLabel="">
+            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
+                           OnClick="@(() => ShowOrderAsync(context))" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+    </PagerContent>
+    <NoRecordsContent>
+        <EmptyState Icon="@Icons.Material.Filled.SearchOff" Title="No orders found"
+                    Message="Try adjusting your search or filters." />
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    private List<OrderListItem> _orders = new();
+    private List<OrderListItem> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+    private OrderStatus? _statusFilter;
+    private string? _categoryFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        if (!string.IsNullOrEmpty(Data.LastError))
+        {
+            Snackbar.Add($"API error: {Data.LastError}", Severity.Warning);
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _orders = (await Data.GetOrdersAsync()).OrderByDescending(o => o.CreatedAt).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<OrderListItem> query = _orders;
+        if (_statusFilter is not null) query = query.Where(o => o.Status == _statusFilter);
+        if (!string.IsNullOrWhiteSpace(_categoryFilter)) query = query.Where(o => o.Category == _categoryFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var term = _search.Trim();
+            query = query.Where(o =>
+                o.Customer.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                o.Category.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                o.ProblemDescription.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+        _filtered = query.ToList();
+    }
+
+    private async Task ShowOrderAsync(OrderListItem order)
+    {
+        var parameters = new DialogParameters { ["Order"] = order };
+        var dialog = await DialogService.ShowAsync<OrderDetailsDialog>("Order details", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task CreateOrderAsync()
+    {
+        var categories = await Data.GetCategoriesAsync();
+        var addresses = await Data.GetAddressesAsync();
+        var customers = await Data.GetCustomersAsync();
+        var parameters = new DialogParameters
+        {
+            ["Categories"] = categories.ToList(),
+            ["Addresses"] = addresses.ToList(),
+            ["Customers"] = customers.ToList()
+        };
+        var dialog = await DialogService.ShowAsync<CreateOrderDialog>("Post a new order", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: CreateOrderRequest request })
+        {
+            await Data.CreateOrderAsync(request);
+            Snackbar.Add("Order created successfully.", Severity.Success);
+            await LoadAsync();
+        }
+    }
+}

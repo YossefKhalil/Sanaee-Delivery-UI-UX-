@@ -1,0 +1,197 @@
+@namespace SanaeeUI.Client.Shared
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center gap-3">
+            <MudText Typo="Typo.h6">Order #@Order.Id</MudText>
+            <MudChip T="string" Size="Size.Small" Color="@Order.Status.ToColor()"
+                     Icon="@Order.Status.ToIcon()">@Order.Status.Spaced()</MudChip>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12" md="7">
+                <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Request</MudText>
+                <MudText Class="mb-3">@Order.ProblemDescription</MudText>
+
+                <MudDivider Class="my-3" />
+
+                <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Offers (@_offers.Count)</MudText>
+                @if (_offers.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="my-2">No offers submitted yet.</MudAlert>
+                }
+                else
+                {
+                    <MudList T="string" Dense="true">
+                        @foreach (var offer in _offers)
+                        {
+                            <MudListItem T="string">
+                                <div class="d-flex align-center justify-space-between gap-2 flex-wrap">
+                                    <div>
+                                        <MudText Typo="Typo.body2" Style="font-weight:600;">@offer.Provider</MudText>
+                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                            Labor @offer.LaborCost.ToString("N0")
+                                            @(offer.MaterialCost is null ? "" : $"· Materials {offer.MaterialCost.Value:N0}")
+                                            · arrives @offer.ArrivalTime.ToString("dd MMM HH:mm")
+                                        </MudText>
+                                    </div>
+                                    <div class="d-flex align-center gap-2">
+                                        <MudText Typo="Typo.body2" Style="font-weight:700;">@offer.Total.ToString("N0") EGP</MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="@offer.Status.ToColor()">@offer.Status.Spaced()</MudChip>
+                                        @if (Order.Status == OrderStatus.Pending && offer.Status == OfferStatus.Pending)
+                                        {
+                                            <MudButton Size="Size.Small" Color="Color.Success" Variant="Variant.Filled" OnClick="@(() => AcceptAsync(offer))">Accept</MudButton>
+                                            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined" OnClick="@(() => RejectAsync(offer))">Reject</MudButton>
+                                        }
+                                    </div>
+                                </div>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+
+                <MudDivider Class="my-3" />
+
+                <MudText Typo="Typo.subtitle2" Class="mud-text-secondary mb-1">Status timeline</MudText>
+                <MudTimeline TimelinePosition="TimelinePosition.Start" TimelineAlignment="TimelineAlignment.Center">
+                    @foreach (var h in _history.OrderBy(h => h.CreatedAt))
+                    {
+                        <MudTimelineItem Color="@h.Status.ToColor()" Size="Size.Small" Elevation="0">
+                            <div>
+                                <MudText Typo="Typo.body2" Style="font-weight:600;">@h.Status.Spaced()</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @h.CreatedAt.ToString("dd MMM yyyy HH:mm") · @h.By @(h.Reason is null ? "" : $"· {h.Reason}")
+                                </MudText>
+                            </div>
+                        </MudTimelineItem>
+                    }
+                </MudTimeline>
+            </MudItem>
+
+            <MudItem xs="12" md="5">
+                <MudPaper Class="pa-3" Outlined="true">
+                    <MudText Typo="Typo.subtitle2" Class="mud-text-secondary mb-2">Details</MudText>
+                    <DetailRow Label="Customer" Value="@Order.Customer" />
+                    <DetailRow Label="Category" Value="@Order.Category" />
+                    <DetailRow Label="Address" Value="@Order.Address" />
+                    <DetailRow Label="Created" Value="@Order.CreatedAt.ToString("dd MMM yyyy HH:mm")" />
+                    <DetailRow Label="Visiting" Value="@(Order.VisitingTime?.ToString("dd MMM yyyy HH:mm") ?? "—")" />
+                    <DetailRow Label="Accepted total" Value="@(Order.AcceptedOfferTotal is null ? "—" : Order.AcceptedOfferTotal.Value.ToString("N0") + " EGP")" />
+                </MudPaper>
+
+                <MudText Typo="Typo.subtitle2" Class="mud-text-secondary mt-4 mb-2">Fulfilment actions</MudText>
+                <div class="d-flex flex-wrap gap-2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+                               Disabled="@(Order.Status != OrderStatus.OfferAccepted)" OnClick="StartAsync">Start work</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Check"
+                               Disabled="@(Order.Status != OrderStatus.InProgress)" OnClick="CompleteAsync">Complete</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Cancel"
+                               Disabled="@(Order.Status is OrderStatus.Completed or OrderStatus.Cancelled)" OnClick="ToggleCancel">Cancel order</MudButton>
+                </div>
+
+                @if (_showCancel)
+                {
+                    <MudPaper Class="pa-3 mt-3" Outlined="true">
+                        <MudSelect T="int?" @bind-Value="_cancelReasonId" Label="Cancellation reason" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            @foreach (var r in _reasons)
+                            {
+                                <MudSelectItem T="int?" Value="@r.Id">@r.Text</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect T="UserType" @bind-Value="_cancelActor" Label="Cancelled by" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2">
+                            @foreach (var t in Enum.GetValues<UserType>())
+                            {
+                                <MudSelectItem T="UserType" Value="@t">@t.Spaced()</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudButton Class="mt-2" Color="Color.Error" Variant="Variant.Filled" FullWidth="true" OnClick="ConfirmCancel">Confirm cancellation</MudButton>
+                    </MudPaper>
+                }
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public OrderListItem Order { get; set; } = default!;
+    [Inject] private ISanaeeDataService Data { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private List<OfferListItem> _offers = new();
+    private List<OrderStatusHistoryListItem> _history = new();
+    private List<CancelReasonListItem> _reasons = new();
+    private bool _showCancel;
+    private int? _cancelReasonId;
+    private UserType _cancelActor = UserType.Customer;
+    private bool _changed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var offers = await Data.GetOffersAsync();
+        _offers = offers.Where(o => o.OrderId == Order.Id).OrderBy(o => o.Total).ToList();
+        var history = await Data.GetOrderStatusHistoriesAsync();
+        _history = history.Where(h => h.OrderId == Order.Id).ToList();
+        _reasons = (await Data.GetCancelReasonsAsync()).Where(r => r.IsActive).ToList();
+    }
+
+    private async Task AcceptAsync(OfferListItem offer)
+    {
+        await Data.AcceptOfferAsync(offer.Id);
+        _changed = true;
+        Snackbar.Add($"Offer from {offer.Provider} accepted.", Severity.Success);
+        await ReloadAsync();
+    }
+
+    private async Task RejectAsync(OfferListItem offer)
+    {
+        await Data.RejectOfferAsync(offer.Id);
+        _changed = true;
+        Snackbar.Add("Offer rejected.", Severity.Info);
+        await ReloadAsync();
+    }
+
+    private void ToggleCancel() => _showCancel = !_showCancel;
+
+    private async Task ConfirmCancel()
+    {
+        var reason = _reasons.FirstOrDefault(r => r.Id == _cancelReasonId)?.Text ?? "Not specified";
+        await Data.CancelOrderAsync(Order.Id, reason, _cancelActor);
+        _changed = true;
+        Snackbar.Add("Order cancelled.", Severity.Warning);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private async Task StartAsync()
+    {
+        await Data.StartOrderAsync(Order.Id);
+        _changed = true;
+        Snackbar.Add("Order moved to In Progress.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private async Task CompleteAsync()
+    {
+        await Data.CompleteOrderAsync(Order.Id);
+        _changed = true;
+        Snackbar.Add("Order completed.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private async Task ReloadAsync()
+    {
+        var o = await Data.GetOrderAsync(Order.Id);
+        if (o is not null) Order = o;
+        var offers = await Data.GetOffersAsync();
+        _offers = offers.Where(x => x.OrderId == Order.Id).OrderBy(x => x.Total).ToList();
+        var history = await Data.GetOrderStatusHistoriesAsync();
+        _history = history.Where(h => h.OrderId == Order.Id).ToList();
+        StateHasChanged();
+    }
+
+    private void Close() => MudDialog.Close(_changed ? DialogResult.Ok(true) : DialogResult.Cancel());
+}

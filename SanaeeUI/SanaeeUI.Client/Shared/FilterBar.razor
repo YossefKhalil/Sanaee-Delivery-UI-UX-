@@ -1,0 +1,11 @@
+@namespace SanaeeUI.Client.Shared
+
+<MudPaper Class="filter-bar pa-3 mb-3" Elevation="0">
+    <div class="d-flex flex-wrap align-center gap-3">
+        @FilterContent
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public RenderFragment? FilterContent { get; set; }
+}

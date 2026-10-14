@@ -1,0 +1,104 @@
+@page "/payments"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Payments</PageTitle>
+
+<PageHeader Title="Payments" Subtitle="Collection attempts via cash, card, wallet, Fawry and Vodafone Cash"
+            Count="@($"{_filtered.Count} / {_payments.Count}")" />
+
+<MudGrid Class="mb-3">
+    <MudItem xs="12" sm="6" md="3">
+        <StatCard Title="Collected" Value="@($"{_collected:N0}")" Icon="@Icons.Material.Filled.Payments" Color="Color.Success" Caption="Successful payments" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <StatCard Title="Pending" Value="@(_pending.ToString("N0"))" Icon="@Icons.Material.Filled.Schedule" Color="Color.Warning" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <StatCard Title="Failed" Value="@(_failed.ToString("N0"))" Icon="@Icons.Material.Filled.ErrorOutline" Color="Color.Error" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <StatCard Title="Refunded" Value="@(_refunded.ToString("N0"))" Icon="@Icons.Material.Filled.Undo" Color="Color.Info" />
+    </MudItem>
+</MudGrid>
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap gap-3">
+        <MudTextField @bind-Value="_search" Placeholder="Search user or reference..." Immediate="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:300px;" />
+        <MudSelect T="PaymentStatus?" @bind-Value="_statusFilter" Label="Status" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:200px;">
+            @foreach (var s in Enum.GetValues<PaymentStatus>())
+            {
+                <MudSelectItem T="PaymentStatus?" Value="@s">@s.Spaced()</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="PaymentMethod?" @bind-Value="_methodFilter" Label="Method" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:200px;">
+            @foreach (var m in Enum.GetValues<PaymentMethod>())
+            {
+                <MudSelectItem T="PaymentMethod?" Value="@m">@m.Spaced()</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>#</MudTh>
+        <MudTh>User</MudTh>
+        <MudTh>Amount</MudTh>
+        <MudTh>Method</MudTh>
+        <MudTh>Type</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Reference</MudTh>
+        <MudTh>Created</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#">@context.Id</MudTd>
+        <MudTd DataLabel="User">@context.User</MudTd>
+        <MudTd DataLabel="Amount"><b>@context.Amount.ToString("N2")</b></MudTd>
+        <MudTd DataLabel="Method"><MudChip T="string" Size="Size.Small" Color="@context.Method.ToColor()">@context.Method.Spaced()</MudChip></MudTd>
+        <MudTd DataLabel="Type">@context.Type.Spaced()</MudTd>
+        <MudTd DataLabel="Status"><MudChip T="string" Size="Size.Small" Color="@context.Status.ToColor()">@context.Status.Spaced()</MudChip></MudTd>
+        <MudTd DataLabel="Reference"><span class="mono">@(context.TransactionReference ?? "—")</span></MudTd>
+        <MudTd DataLabel="Created">@context.CreatedAt.ToString("dd MMM HH:mm")</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<PaymentListItem> _payments = new();
+    private List<PaymentListItem> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+    private PaymentStatus? _statusFilter;
+    private PaymentMethod? _methodFilter;
+    private decimal _collected, _pending, _failed, _refunded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _payments = (await Data.GetPaymentsAsync()).OrderByDescending(p => p.CreatedAt).ToList();
+        _collected = _payments.Where(p => p.Status == PaymentStatus.Success).Sum(p => p.Amount);
+        _pending = _payments.Where(p => p.Status == PaymentStatus.Pending).Sum(p => p.Amount);
+        _failed = _payments.Where(p => p.Status == PaymentStatus.Failed).Sum(p => p.Amount);
+        _refunded = _payments.Where(p => p.Status == PaymentStatus.Refunded).Sum(p => p.Amount);
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<PaymentListItem> q = _payments;
+        if (_statusFilter is not null) q = q.Where(p => p.Status == _statusFilter);
+        if (_methodFilter is not null) q = q.Where(p => p.Method == _methodFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var t = _search.Trim();
+            q = q.Where(p => p.User.Contains(t, StringComparison.OrdinalIgnoreCase) ||
+                             (p.TransactionReference?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+        _filtered = q.ToList();
+    }
+}

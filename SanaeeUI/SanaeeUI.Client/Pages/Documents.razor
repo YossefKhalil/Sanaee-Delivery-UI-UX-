@@ -1,0 +1,138 @@
+@page "/documents"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Sanaee Delivery · KYC Documents</PageTitle>
+
+<PageHeader Title="KYC Documents" Subtitle="National ID, criminal record, work permit and photo verification"
+            Count="@($"{_filtered.Count} / {_documents.Count}")" />
+
+<MudGrid Class="mb-3">
+    <MudItem xs="6" md="3">
+        <StatCard Title="Pending" Value="@_pending.ToString()" Icon="@Icons.Material.Filled.HourglassEmpty" Color="Color.Warning" />
+    </MudItem>
+    <MudItem xs="6" md="3">
+        <StatCard Title="Approved" Value="@_approved.ToString()" Icon="@Icons.Material.Filled.Verified" Color="Color.Success" />
+    </MudItem>
+    <MudItem xs="6" md="3">
+        <StatCard Title="Rejected" Value="@_rejected.ToString()" Icon="@Icons.Material.Filled.Block" Color="Color.Error" />
+    </MudItem>
+    <MudItem xs="6" md="3">
+        <StatCard Title="Re-upload" Value="@_reupload.ToString()" Icon="@Icons.Material.Filled.Refresh" Color="Color.Info" />
+    </MudItem>
+</MudGrid>
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap gap-3">
+        <MudTextField @bind-Value="_search" Placeholder="Search provider..." Immediate="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:300px;" />
+        <MudSelect T="DocumentStatus?" @bind-Value="_statusFilter" Label="Status" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:200px;">
+            @foreach (var s in Enum.GetValues<DocumentStatus>())
+            {
+                <MudSelectItem T="DocumentStatus?" Value="@s">@s.Spaced()</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>#</MudTh>
+        <MudTh>Provider</MudTh>
+        <MudTh>Type</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Document</MudTh>
+        <MudTh>Reviewed by</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#">@context.Id</MudTd>
+        <MudTd DataLabel="Provider">@context.Provider</MudTd>
+        <MudTd DataLabel="Type">@context.Type.Spaced()</MudTd>
+        <MudTd DataLabel="Status"><MudChip T="string" Size="Size.Small" Color="@context.Status.ToColor()">@context.Status.Spaced()</MudChip></MudTd>
+        <MudTd DataLabel="Document">
+            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.OpenInNew"
+                       OnClick="@(() => OpenAsync(context.DocumentUrl))">View</MudButton>
+        </MudTd>
+        <MudTd DataLabel="Reviewed by">
+            @if (context.ChangedAt is null)
+            {
+                <span class="mud-text-secondary">—</span>
+            }
+            else
+            {
+                @($"{context.ChangedBy} · {context.ChangedAt:dd MMM}")
+            }
+        </MudTd>
+        <MudTd DataLabel="Actions">
+            @if (context.Status is DocumentStatus.Pending or DocumentStatus.ReUploadRequired)
+            {
+                <MudButton Size="Size.Small" Color="Color.Success" Variant="Variant.Filled"
+                           OnClick="@(() => ApproveAsync(context))">Approve</MudButton>
+                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined" Class="ml-2"
+                           OnClick="@(() => RejectAsync(context))">Reject</MudButton>
+            }
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<ProviderDocumentListItem> _documents = new();
+    private List<ProviderDocumentListItem> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+    private DocumentStatus? _statusFilter;
+    private int _pending, _approved, _rejected, _reupload;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _documents = (await Data.GetDocumentsAsync()).OrderBy(d => d.Status).ThenBy(d => d.Provider).ToList();
+        _pending = _documents.Count(d => d.Status == DocumentStatus.Pending);
+        _approved = _documents.Count(d => d.Status == DocumentStatus.Approved);
+        _rejected = _documents.Count(d => d.Status == DocumentStatus.Rejected);
+        _reupload = _documents.Count(d => d.Status == DocumentStatus.ReUploadRequired);
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<ProviderDocumentListItem> q = _documents;
+        if (_statusFilter is not null) q = q.Where(d => d.Status == _statusFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+            q = q.Where(d => d.Provider.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));
+        _filtered = q.ToList();
+    }
+
+    private void OpenAsync(string url) =>
+        Snackbar.Add($"In live mode this opens: {url}", Severity.Info);
+
+    private async Task ApproveAsync(ProviderDocumentListItem doc)
+    {
+        await Data.ApproveDocumentAsync(doc.Id);
+        Snackbar.Add($"Document #{doc.Id} approved.", Severity.Success);
+        await ReloadAsync();
+    }
+
+    private async Task RejectAsync(ProviderDocumentListItem doc)
+    {
+        var dialog = await DialogService.ShowAsync<ReasonDialog>("Reject document",
+            new DialogParameters { ["Title"] = $"Reject {doc.Type.Spaced()} for {doc.Provider}" },
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: string reason })
+        {
+            await Data.RejectDocumentAsync(doc.Id, reason);
+            Snackbar.Add($"Document #{doc.Id} rejected.", Severity.Warning);
+            await ReloadAsync();
+        }
+    }
+}

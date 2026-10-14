@@ -1,0 +1,86 @@
+@page "/addresses"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Addresses</PageTitle>
+
+<PageHeader Title="Addresses" Subtitle="Saved customer service locations"
+            Count="@($"{_filtered.Count} / {_addresses.Count}")" />
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap gap-3">
+        <MudTextField @bind-Value="_search" Placeholder="Search city or street..." Immediate="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:300px;" />
+        <MudSelect T="string?" @bind-Value="_cityFilter" Label="City" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:200px;">
+            @foreach (var c in _cities)
+            {
+                <MudSelectItem T="string?" Value="@c">@c</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>#</MudTh>
+        <MudTh>User</MudTh>
+        <MudTh>Title</MudTh>
+        <MudTh>City</MudTh>
+        <MudTh>Region</MudTh>
+        <MudTh>Street</MudTh>
+        <MudTh>Building</MudTh>
+        <MudTh>Default</MudTh>
+        <MudTh>Map</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#">@context.Id</MudTd>
+        <MudTd DataLabel="User">@context.UserId</MudTd>
+        <MudTd DataLabel="Title">@context.Title</MudTd>
+        <MudTd DataLabel="City">@context.City</MudTd>
+        <MudTd DataLabel="Region">@context.Region</MudTd>
+        <MudTd DataLabel="Street">@context.Street</MudTd>
+        <MudTd DataLabel="Building">@(context.BuildingNumber ?? "—")@(context.ApartmentNumber is null ? "" : " / " + context.ApartmentNumber)</MudTd>
+        <MudTd DataLabel="Default">
+            @if (context.IsDefault)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Success">Default</MudChip>
+            }
+        </MudTd>
+        <MudTd DataLabel="Map">
+            <MudIconButton Icon="@Icons.Material.Filled.Place" Size="Size.Small" Color="Color.Primary" Disabled="@(context.Latitude is null)" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<AddressListItem> _addresses = new();
+    private List<AddressListItem> _filtered = new();
+    private List<string> _cities = new();
+    private bool _loading = true;
+    private string? _search;
+    private string? _cityFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _addresses = (await Data.GetAddressesAsync()).OrderBy(a => a.City).ToList();
+        _cities = _addresses.Select(a => a.City).Distinct().OrderBy(x => x).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<AddressListItem> q = _addresses;
+        if (_cityFilter is not null) q = q.Where(a => a.City == _cityFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var t = _search.Trim();
+            q = q.Where(a => a.City.Contains(t, StringComparison.OrdinalIgnoreCase) || a.Street.Contains(t, StringComparison.OrdinalIgnoreCase));
+        }
+        _filtered = q.ToList();
+    }
+}

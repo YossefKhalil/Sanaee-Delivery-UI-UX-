@@ -1,0 +1,106 @@
+@page "/users"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data
+
+<PageTitle>Sanaee Delivery · Users</PageTitle>
+
+<PageHeader Title="Users" Subtitle="Unified accounts: admins, customers and providers"
+            Count="@($"{_filtered.Count} / {_accounts.Count}")" />
+
+<MudGrid Class="mb-3">
+    <MudItem xs="12" md="4">
+        <StatCard Title="Customers" Value="@_customers.ToString()" Icon="@Icons.Material.Filled.People" Color="Color.Info" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <StatCard Title="Providers" Value="@_providers.ToString()" Icon="@Icons.Material.Filled.Engineering" Color="Color.Primary" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <StatCard Title="Administrators" Value="@_admins.ToString()" Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Error" />
+    </MudItem>
+</MudGrid>
+
+<MudPaper Class="pa-3 mb-3" Elevation="1">
+    <div class="d-flex flex-wrap gap-3">
+        <MudTextField @bind-Value="_search" Placeholder="Search name..." Immediate="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:300px;" />
+        <MudSelect T="UserType?" @bind-Value="_typeFilter" Label="Type" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:200px;">
+            @foreach (var u in Enum.GetValues<UserType>())
+            {
+                <MudSelectItem T="UserType?" Value="@u">@u.Spaced()</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+</MudPaper>
+
+<MudTable Items="_filtered" Hover="true" Striped="true" Breakpoint="Breakpoint.Md" Elevation="0" Class="sanaee-table" Loading="_loading">
+    <HeaderContent>
+        <MudTh>User</MudTh>
+        <MudTh>Id</MudTh>
+        <MudTh>Type</MudTh>
+        <MudTh>Contact</MudTh>
+        <MudTh>Detail</MudTh>
+        <MudTh>Status</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="User">
+            <div class="d-flex align-center gap-2">
+                <EntityAvatar Name="@context.Name" Size="Size.Small" Color="@context.Type.ToColor()" />
+                <span>@context.Name</span>
+            </div>
+        </MudTd>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel="Type"><MudChip T="string" Size="Size.Small" Color="@context.Type.ToColor()">@context.Type.Spaced()</MudChip></MudTd>
+        <MudTd DataLabel="Contact">@context.Contact</MudTd>
+        <MudTd DataLabel="Detail">@context.Detail</MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Size="Size.Small" Color="@(context.Active ? Color.Success : Color.Error)">
+                @(context.Active ? "Active" : "Disabled")
+            </MudChip>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private sealed record Account(int Id, string Name, UserType Type, string Contact, string Detail, bool Active);
+
+    private List<Account> _accounts = new();
+    private List<Account> _filtered = new();
+    private bool _loading = true;
+    private string? _search;
+    private UserType? _typeFilter;
+    private int _customers, _providers, _admins;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var list = new List<Account>();
+        foreach (var c in await Data.GetCustomersAsync())
+        {
+            list.Add(new Account(c.Id, c.Name, UserType.Customer, c.Email, $"{c.OrdersCount} orders", c.IsActive));
+            _customers++;
+        }
+        foreach (var p in await Data.GetProvidersAsync())
+        {
+            list.Add(new Account(p.Id, p.Name, UserType.Provider, p.NationalNumber, $"{p.CompletedOrders} done · {p.AverageRating} ★", p.Status == ProviderStatus.Active));
+            _providers++;
+        }
+        list.Add(new Account(1, "Platform Admin", UserType.Admin, "admin@sanaee.eg", "Super user", true));
+        _admins = 1;
+
+        _accounts = list.OrderBy(a => a.Type).ThenBy(a => a.Name).ToList();
+        ApplyFilters();
+        _loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<Account> q = _accounts;
+        if (_typeFilter is not null) q = q.Where(a => a.Type == _typeFilter);
+        if (!string.IsNullOrWhiteSpace(_search))
+            q = q.Where(a => a.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));
+        _filtered = q.ToList();
+    }
+}

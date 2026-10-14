@@ -1,0 +1,21 @@
+@namespace SanaeeUI.Client.Shared
+
+<span class="money" style="@($"color:{ColorCss};")">@Formatted</span>
+
+@code {
+    [Parameter] public decimal? Amount { get; set; }
+    [Parameter] public string Currency { get; set; } = "EGP";
+    [Parameter] public bool Signed { get; set; }
+    [Parameter] public string? ColorCss { get; set; }
+
+    private string Formatted
+    {
+        get
+        {
+            if (Amount is null) return "—";
+            var sign = Signed && Amount > 0 ? "+" : "";
+            var text = $"{sign}{Amount.Value:N0} {Currency}";
+            return text;
+        }
+    }
+}
