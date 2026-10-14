@@ -1,4 +1,4 @@
-﻿using Core.Application.Common.Models;
+using Core.Application.Common.Models;
 using Core.Application.Features.OrderStatusHistories.Dtos;
 using Core.Application.Features.OrderStatusHistories.Queries.GetAllHistoriesForAdmin;
 using MediatR;
@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers
 {
     [ApiController]
-    [Route("api/[contorller]")]
+    [Route("api/[controller]")]
     public class OrderStatusHistoriesController : ControllerBase
     {
         private readonly ISender _mediator;

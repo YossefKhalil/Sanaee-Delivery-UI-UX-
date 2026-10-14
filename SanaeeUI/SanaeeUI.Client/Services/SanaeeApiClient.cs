@@ -24,7 +24,7 @@ public class SanaeeApiClient : ISanaeeDataService
         Converters = { new JsonStringEnumConverter() }
     };
 
-    private const int PageSizeAll = 1000; // request everything in one page
+    private const int PageSizeAll = 100; // API caps PageSize at 100 per request
     private const int AggregateCap = 20;  // bound N+1 aggregation for per-entity endpoints
 
     public SanaeeApiClient(HttpClient http) => _http = http;
@@ -479,10 +479,7 @@ public class SanaeeApiClient : ISanaeeDataService
 
     public async Task<IReadOnlyList<OrderStatusHistoryListItem>> GetOrderStatusHistoriesAsync()
     {
-        // NOTE: the backend route is literally "api/[contorller]/admin" due to a typo
-        // in the controller's [Route] attribute; "[contorller]" is not a recognized
-        // token so it is not replaced. We percent-encode the brackets to request it.
-        var dtos = await GetRawListAsync<GetHistoryDto>($"api/%5Bcontorller%5D/admin?pageNumber=1&pageSize={PageSizeAll}");
+        var dtos = await GetRawListAsync<GetHistoryDto>($"api/OrderStatusHistories/admin?pageNumber=1&pageSize={PageSizeAll}");
         return dtos.Select(MapHistory).ToList();
     }
 
