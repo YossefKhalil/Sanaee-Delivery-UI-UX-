@@ -2,14 +2,23 @@ using MudBlazor.Services;
 using SanaeeUI.Client.Pages;
 using SanaeeUI.Client.Services;
 using SanaeeUI.Components;
+using SanaeeUI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
 
-// Sanaee UI data services (shared with the WebAssembly client)
-builder.Services.AddSanaeeUiServices(builder.Configuration["SanaeeApi:BaseUrl"] ?? "http://localhost:5270/");
+// Base URL of the real Sanaee-Delivery API.
+var apiBaseUrl = builder.Configuration["SanaeeApi:BaseUrl"] ?? "http://localhost:5270/";
+if (!apiBaseUrl.EndsWith('/')) apiBaseUrl += "/";
+
+// Named client used by the reverse proxy to reach the API server-to-server (no CORS).
+builder.Services.AddHttpClient(SanaeeApiProxyClient.Name, c => c.BaseAddress = new Uri(apiBaseUrl));
+
+// Sanaee UI data services (shared with the WebAssembly client).
+// On the server (prerender) we call the API directly — no proxy needed.
+builder.Services.AddSanaeeUiServices(apiBaseUrl);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -37,6 +46,11 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+
+// Reverse proxy: forward this app's /api/** to the real API (CORS-free bridge
+// for the WebAssembly client). The original Sanaee code is not modified.
+app.MapSanaeeApiProxy();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
