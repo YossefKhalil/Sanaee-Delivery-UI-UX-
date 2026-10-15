@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanaee Delivery Backend — .NET Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Themed to Sanaee — Nile teal + antique gold on warm sand. */
+  :root{
+    --paper:#f7f3ea; --surface:#fffdfb; --inset:#efe8d8; --paper-2:#fcfaf5;
+    --ink:#22302f; --navy:#0b4f4f; --muted:#6f7b7b; --faint:#9aa8a7;
+    --line:#e6ddc9; --line-2:#efe9dd;
+    --terra:#b0891f; --terra-soft:#c9a227; --sage:#2e7d5f; --rose:#9c4024;
+    --code-bg:#0e2a2a; --code-ink:#dcefe9;
+    --mono:'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+    --sans:'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --serif:'Fraunces', Georgia, 'Times New Roman', serif;
+  }
+  html[data-theme="dark"]{
+    --paper:#0f1516; --surface:#151d1e; --inset:#1b2526; --paper-2:#121a1b;
+    --ink:#e3ece9; --navy:#8fd3cf; --muted:#98a8a6; --faint:#68797a;
+    --line:#273334; --line-2:#202b2c;
+    --terra:#e3c766; --terra-soft:#e3c766; --sage:#6fbe95; --rose:#e08b6a;
+    --code-bg:#08191a; --code-ink:#d8efec;
+  }
+  html[data-theme="dark"]{ --code-bg:#0a1f20; }
+  :root{ --code-bg:#0e2a2a; }
+  html[data-theme="dark"]{
+    --paper:#0f1516; --surface:#151d1e; --inset:#1b2526; --paper-2:#121a1b;
+    --ink:#e3ece9; --navy:#8fd3cf; --muted:#98a8a6; --faint:#68797a;
+    --line:#28313f; --line-2:#1b2526;
+    --terra:#e3c766; --terra-soft:#e3c227; --sage:#7bc79b; --rose:#e08a6a;
+    --code-bg:#0b2323; --code-ink:#d6ece7;
+  }
+  html[data-theme="dark"]{ --line:#26333a; --line-2:#1d272b; --paper:#0f1516; --surface:#151d1e; --inset:#1b2526; --paper-2:#121a1b; --ink:#e3ece9; --navy:#8fd3cf; --muted:#98a8a6; --faint:#68797a; }
+  html[data-theme="dark"]{ --terra:#c9a227; --terra-soft:#e0bb3a; --sage:#3ea579; --rose:#c15a37; }
+  html[data-theme="dark"]{ --code-bg:#0b2323; --code-ink:#d6ece7; }
+  html{ --x:0; }
+
+  .shell{display:grid; grid-template-columns:282px 1fr; min-height:100vh;}
+  aside{position:sticky; top:0; height:100vh; overflow-y:auto; background:var(--paper-2);
+    border-right:1px solid var(--line); padding-bottom:40px;}
+  main{max-width:840px; margin:0 auto; padding:64px 56px 140px; width:100%;}
+
+  .brand{padding:30px 26px 22px; border-bottom:1px solid var(--line);}
+  .brand .mark{font-family:var(--serif); font-size:2.4rem; font-weight:500; color:var(--navy); letter-spacing:-.01em;}
+  .brand .mark b{color:var(--terra);}
+  .brand .tag{font-size:1.25rem; color:var(--muted); font-style:italic; font-family:var(--serif); margin-top:2px;}
+  .brand .stk{font-size:1.15rem; color:var(--faint); margin-top:10px; letter-spacing:.02em;}
+  nav{padding:18px 16px;}
+  nav .grp{font-size:1.05rem; text-transform:uppercase; letter-spacing:.14em; color:var(--faint);
+    font-weight:600; margin:20px 12px 7px;}
+  nav a{display:block; color:var(--muted); padding:5px 14px; font-size:1.42rem; border:0; border-left:2px solid transparent; line-height:1.4;}
+  nav a:hover{color:var(--navy); background:transparent;}
+  nav a.active{color:var(--navy); font-weight:600; border-left-color:var(--terra);}
+
+  .topctl{display:flex; justify-content:flex-end; margin-bottom:30px;}
+  .qbtn{background:none; border:0; border-bottom:1px dashed var(--line); color:var(--muted); cursor:pointer;
+    font-family:var(--sans); font-size:1.28rem; padding:2px 2px 3px; letter-spacing:.01em;}
+  .qbtn:hover{color:var(--terra);}
+
+  .eyebrow{text-transform:uppercase; letter-spacing:.18em; font-size:1.12rem; font-weight:600;
+    color:var(--terra); margin:0 0 4px;}
+  h1.title{font-family:var(--serif); font-weight:500; font-size:4.4rem; line-height:1.08; letter-spacing:-.015em;
+    margin:0 0 14px; color:var(--navy);}
+  h2.sec{font-family:var(--serif); font-weight:500; font-size:3rem; letter-spacing:-.01em; color:var(--navy);
+    margin:64px 0 4px; padding-top:12px;}
+  h3{font-family:var(--sans); font-weight:600; font-size:2rem; letter-spacing:-.01em; margin:36px 0 6px; color:var(--navy);}
+  h4{font-weight:600; font-size:1.6rem; margin:24px 0 4px; color:var(--ink);}
+  .lead{font-size:1.92rem; line-height:1.5; color:var(--ink); font-weight:300; max-width:64ch;}
+  p{max-width:70ch;}
+  .muted{color:var(--muted);}
+  hr.rule{border:0; border-top:1px solid var(--line); margin:52px 0;}
+  ul,ol{padding-left:20px;} li{margin:4px 0;}
+  ::selection{background:#efd9a6;}
+
+  dl.facts{display:grid; grid-template-columns:auto 1fr; gap:2px 26px; margin:26px 0; font-size:1.5rem;}
+  dl.facts dt{color:var(--faint); text-transform:uppercase; font-size:1.12rem; letter-spacing:.1em; font-weight:600; padding-top:7px;}
+  dl.facts dd{margin:0; padding:6px 0; border-bottom:1px solid var(--line-2);}
+  dl.facts dt{border-bottom:1px solid var(--line-2);}
+
+  .tags{display:flex; gap:8px; flex-wrap:wrap; margin:22px 0;}
+  .tags span{font-size:1.2rem; border:1px solid var(--line); border-radius:20px; padding:2px 12px; color:var(--muted);}
+
+  .note{border-left:3px solid var(--navy); background:var(--paper-2); padding:12px 18px; margin:20px 0; border-radius:0 6px 6px 0;}
+  .note.warn{border-left-color:var(--rose);}
+  .note.tip{border-left-color:var(--sage);}
+  .note .lab{display:block; text-transform:uppercase; letter-spacing:.14em; font-size:1.05rem; font-weight:600; color:var(--navy); margin-bottom:4px;}
+  .note.warn .lab{color:var(--rose);} .note.tip .lab{color:var(--sage);}
+  .note p{margin:0;}
+
+  .expert{border-left:3px solid var(--terra); background:var(--paper-2); padding:12px 18px; margin:20px 0; border-radius:0 6px 6px 0;}
+  .expert .lab{display:block; text-transform:uppercase; letter-spacing:.14em; font-size:1.05rem; font-weight:600; color:var(--terra); margin-bottom:4px;}
+  .expert p{margin:0;}
+  html.hide-expert .expert{display:none;}
+
+  .code{margin:20px 0; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--code-bg);}
+  .code .bar{display:flex; justify-content:space-between; align-items:center; padding:7px 14px; background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.07);}
+  .code .lang{font-family:var(--mono); font-size:1.1rem; color:#8fb7b0; text-transform:lowercase; letter-spacing:.04em;}
+  .code .copy{background:none; border:0; color:#8fb7b0; font-family:var(--sans); font-size:1.15rem; cursor:pointer; padding:2px 6px; border-radius:4px;}
+  .code .copy:hover{background:rgba(255,255,255,.08); color:#fff;}
+  .code pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:1.3rem; line-height:1.62; color:var(--code-ink);}
+  .tk{color:#7fd0c8;} .ts{color:#e0c46b;} .tc{color:#7f9a96; font-style:italic;} .tn{color:#e0a06b;} .ty{color:#8fb7e0;} .ta{color:#c9a2e0;}
+  code.in{font-family:var(--mono); font-size:.9em; background:var(--inset); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--navy);}
+
+  table{width:100%; border-collapse:collapse; margin:18px 0; font-size:1.4rem;}
+  th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line-2); vertical-align:top;}
+  th{color:var(--faint); text-transform:uppercase; font-size:1.1rem; letter-spacing:.1em; font-weight:600; border-bottom-color:var(--line);}
+  tr:hover td{background:var(--paper-2);}
+
+  .tabs{display:flex; gap:22px; border-bottom:1px solid var(--line); margin:20px 0 0;}
+  .tabs button{background:none; border:0; border-bottom:2px solid transparent; color:var(--muted); padding:8px 0; cursor:pointer; font-size:1.42rem; font-family:var(--sans); font-weight:500;}
+  .tabs button.active{color:var(--navy); border-bottom-color:var(--terra);}
+  .tabpane{display:none;} .tabpane.active{display:block;}
+
+  .m{font-family:var(--mono); font-size:1.08rem; font-weight:600; letter-spacing:.04em; width:54px; display:inline-block;}
+  .m.get{color:#2f6fb0;} .m.post{color:#4a7d46;} .m.put{color:#b07d1f;} .m.patch{color:#8a5ea3;} .m.delete{color:#b14a3c;}
+  .auth{font-size:1.12rem; color:var(--muted); letter-spacing:.02em;}
+  .auth.seller{color:var(--terra);} .auth.admin{color:var(--rose);} .auth.buyer{color:var(--sage);} .auth.open{color:var(--faint);}
+
+  .controls{margin:18px 0 4px;}
+  #ep-search{width:100%; background:var(--surface); border:1px solid var(--line); color:var(--ink);
+    padding:11px 14px; border-radius:6px; font-size:1.5rem; font-family:var(--sans);}
+  #ep-search:focus{outline:none; border-color:var(--terra-soft);}
+  .chips{display:flex; gap:18px; flex-wrap:wrap; margin:16px 0 6px;}
+  .chip{cursor:pointer; color:var(--muted); font-size:1.35rem; border-bottom:2px solid transparent; padding-bottom:2px;}
+  .chip.active{color:var(--navy); font-weight:600; border-bottom-color:var(--terra);}
+  .ep-count{color:var(--faint); font-size:1.25rem; margin:8px 0;}
+  .ep{border-bottom:1px solid var(--line-2);}
+  .ep-head{display:flex; align-items:baseline; gap:16px; padding:11px 4px; cursor:pointer;}
+  .ep-head:hover{background:var(--paper-2);}
+  .ep-path{font-family:var(--mono); font-size:1.32rem; color:var(--ink); flex:1; word-break:break-all;}
+  .ep-sum{color:var(--faint); font-size:1.25rem;}
+  .ep-body{display:none; padding:2px 4px 16px 74px;}
+  .ep.open .ep-body{display:block;}
+  .ep-meta{display:grid; grid-template-columns:auto 1fr; gap:3px 20px; font-size:1.4rem; margin-top:6px;}
+  .ep-meta b{color:var(--faint); font-weight:600; font-size:1.08rem; text-transform:uppercase; letter-spacing:.08em;}
+  @media (max-width:1000px){ .ep-body{padding-left:4px;} }
+
+  .arch{width:100%; height:auto; margin:22px 0;}
+  .arch .box{fill:var(--surface); stroke:var(--line); stroke-width:1.5;}
+  .arch .box.api{stroke:#0b6e6e;} .arch .box.app{stroke:var(--terra-soft);}
+  .arch .box.infra{stroke:#b8893f;} .arch .box.dom{stroke:#9c6b8a;}
+  .arch .t-title{fill:var(--navy); font-family:var(--sans); font-weight:600; font-size:13px;}
+  .arch .t-sub{fill:var(--muted); font-family:var(--sans); font-size:10.5px;}
+  .arch .arrow{stroke:#c9bd9c; stroke-width:1.5; fill:none; marker-end:url(#ah);}
+  .arch .lbl{fill:var(--faint); font-family:var(--sans); font-size:10px;}
+
+  details.faq{border-bottom:1px solid var(--line-2);}
+  details.faq summary{padding:13px 2px; cursor:pointer; font-weight:500; list-style:none; color:var(--navy);}
+  details.faq summary::-webkit-details-marker{display:none;}
+  details.faq summary::before{content:"+"; color:var(--terra); margin-right:12px; font-weight:600;}
+  details.faq[open] summary::before{content:"\2013";}
+  details.faq .b{padding:0 2px 14px 26px; color:var(--muted); max-width:70ch;}
+
+  .colophon{margin-top:72px; padding-top:26px; border-top:1px solid var(--line); color:var(--faint); font-size:1.28rem;}
+  kbd{background:var(--inset); border:1px solid var(--line); border-radius:3px; padding:1px 6px; font-family:var(--mono); font-size:1.15rem;}
+  @media (max-width:780px){
+    .shell{grid-template-columns:1fr;} aside{position:static; height:auto;}
+    main{padding:36px 22px 90px;} h1.title{font-size:3.4rem;} .lead{font-size:1.7rem;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand">
+      <div class="mark">Sanaee<b>.</b></div>
+      <div class="tag">where home services find their pros</div>
+      <div class="stk">.NET 10 · ASP.NET Core · EF Core · SQL Server</div>
+    </div>
+    <nav id="nav">
+      <div class="grp">Get oriented</div>
+      <a href="#overview">Overview</a>
+      <a href="#tldr">At a glance</a>
+      <a href="#quickstart">Quick start</a>
+      <a href="#stack">Technology stack</a>
+      <div class="grp">Architecture</div>
+      <a href="#architecture">Layers &amp; flow</a>
+      <a href="#lifecycle">Request lifecycle</a>
+      <a href="#layout">Project layout</a>
+      <a href="#program">Composition root</a>
+      <div class="grp">Core concepts</div>
+      <a href="#shape">Response shape</a>
+      <a href="#errors">Error handling</a>
+      <a href="#validation">Validation</a>
+      <a href="#data">Data layer</a>
+      <a href="#domain">Domain model</a>
+      <a href="#events">Domain events</a>
+      <a href="#enums">Status maps</a>
+      <a href="#security">Security</a>
+      <a href="#config">Configuration</a>
+      <div class="grp">Patterns</div>
+      <a href="#cqrs">CQRS &amp; MediatR</a>
+      <a href="#uow">Repository &amp; UoW</a>
+      <a href="#interceptors">Interceptors</a>
+      <div class="grp">Deep dives</div>
+      <a href="#order">Order lifecycle</a>
+      <a href="#offers">Offers</a>
+      <a href="#wallet">Wallet &amp; payments</a>
+      <a href="#otp">Phone OTP</a>
+      <div class="grp">Reference</div>
+      <a href="#api">API explorer</a>
+      <a href="#issues">Known issues</a>
+      <a href="#build">Build &amp; run</a>
+      <a href="#glossary">Glossary</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="topctl">
+      <button class="qbtn" id="themeToggle">Dark mode</button>
+      <button class="qbtn" id="expertToggle" style="margin-left:14px">Hide expert notes</button>
+    </div>
+
+    <!-- OVERVIEW -->
+    <section id="overview">
+      <p class="eyebrow">Backend · original code</p>
+      <h1 class="title">Sanaee Delivery — the .NET backend</h1>
+      <p class="lead">An on-demand home-services marketplace for the Egyptian market: a customer posts a job, local
+        verified providers bid with offers, one is accepted, the job runs to completion, and money moves through an
+        internal wallet ledger. This document reads the original <code class="in">src/</code> solution end-to-end.</p>
+
+      <dl class="facts">
+        <dt>Runtime</dt><dd>.NET 10 (LTS) · ASP.NET Core controller Web API</dd>
+        <dt>Data</dt><dd>EF Core 10 · SQL Server · migrations-first (12 migrations)</dd>
+        <dt>Shape</dt><dd>Clean Architecture: Domain → Application → Persistence → API</dd>
+        <dt>Patterns</dt><dd>CQRS via MediatR · AutoMapper · FluentValidation · Unit of Work + generic repository</dd>
+        <dt>Surface</dt><dd>4 projects · 19 controllers · ~100 endpoints · 20 entities · 14 enums</dd>
+      </dl>
+
+      <div class="tags">
+        <span>MediatR</span><span>AutoMapper</span><span>FluentValidation</span><span>EF Core</span>
+        <span>SignalR</span><span>ProblemDetails</span><span>Soft delete</span><span>Domain events</span>
+      </div>
+
+      <div class="note warn"><span class="lab">The headline caveat</span>
+        <p>The backend is a well-structured domain skeleton but <strong>not production-ready</strong>: there is
+        <strong>no authentication or authorization at all</strong>, passwords are stored in plaintext, and several
+        services are stubs. A new client job flow works, but nothing is guarded. Read <a href="#security">Security</a>
+        and <a href="#issues">Known issues</a> before trusting anything.</p>
+      </div>
+
+      <div class="note tip"><span class="lab">How to read this</span>
+        <p>Teal <em>Notes</em> flag behaviour and gotchas; gold <em>Expert notes</em> add implementation depth and can
+        be hidden top-right. All source paths are relative to the repo root.</p>
+      </div>
+    </section>
+
+    <!-- TLDR -->
+    <section id="tldr">
+      <p class="eyebrow">The two-minute version</p>
+      <h2 class="sec" style="margin-top:6px">At a glance</h2>
+      <p class="lead" style="font-size:1.74rem">Everything that matters, condensed. Each point links to the full detail.</p>
+      <ul class="summary" style="list-style:none;padding-left:0">
+        <li style="margin:10px 0"><b>What it is.</b> A marketplace API where customers request home services and providers bid. <a href="#overview">Overview</a></li>
+        <li style="margin:10px 0"><b>Stack.</b> .NET 10, ASP.NET Core controllers, EF Core 10 + SQL Server, MediatR, AutoMapper, FluentValidation. <a href="#stack">Stack</a></li>
+        <li style="margin:10px 0"><b>Shape.</b> Four layers with a strict one-way dependency rule; features self-register through <code class="in">AddApplicationServices()</code> / <code class="in">AddInfrastructureServices()</code>. <a href="#architecture">Architecture</a></li>
+        <li style="margin:10px 0"><b>No envelope.</b> Controllers return raw DTOs (or <code class="in">PagedResult&lt;T&gt;</code>); errors are RFC-7807 <code class="in">ProblemDetails</code> via a global handler. <a href="#shape">Response shape</a></li>
+        <li style="margin:10px 0"><b>CQRS.</b> Every feature folder holds Commands &amp; Queries as MediatR records with handlers + FluentValidation validators; one validation behaviour runs them. <a href="#cqrs">CQRS</a></li>
+        <li style="margin:10px 0"><b>Domain.</b> 20 entities; <code class="in">Order</code>, <code class="in">Offer</code>, <code class="in">Message</code> extend <code class="in">BaseEntity</code> and raise domain events; four entities are soft-deletable. <a href="#domain">Domain</a></li>
+        <li style="margin:10px 0"><b>Data.</b> One <code class="in">AppDbContext</code> (19 DbSets) + per-entity configurations + interceptors, behind a generic repository and Unit of Work. <a href="#data">Data layer</a></li>
+        <li style="margin:10px 0"><b>Security.</b> ⚠️ There is none — no auth scheme, plaintext passwords, OTPs written to logs. <a href="#security">Security</a></li>
+        <li style="margin:10px 0"><b>The tricky bits.</b> The order lifecycle state machine, offer bidding, and the wallet ledger. <a href="#order">Order lifecycle</a></li>
+        <li style="margin:10px 0"><b>Watch out.</b> Soft-delete interceptor effectively unregistered, a broken projection, a missing AutoMapper map, and a stale/disabled seeder. <a href="#issues">Known issues</a></li>
+      </ul>
+    </section>
+
+    <!-- QUICK START -->
+    <section id="quickstart">
+      <h2 class="sec">Quick start</h2>
+      <p>You need the <strong>.NET 10 SDK</strong> and a reachable <strong>SQL Server</strong> (a full instance or
+        LocalDB both work). The connection string lives in <code class="in">appsettings.json</code> under
+        <code class="in">ConnectionStrings:DefaultConnection</code>.</p>
+      <div class="code" data-lang="bash"><div class="bar"><span class="lang">bash</span><button class="copy">Copy</button></div><pre>
+cd "Sanaee Delivery"          # repo root (contains Sanaee Delivery.slnx)
+dotnet build
+dotnet run --project src/Presentation/API --launch-profile http
+# → API listens on http://localhost:5270
+
+# Apply the schema (migrations-first; the app does NOT auto-migrate):
+dotnet ef database update --project src/Infrastructure/Persistence --startup-project src/Presentation/API</pre></div>
+      <div class="note warn"><span class="lab">Before you can see data</span>
+        <p>The built-in seeder is <strong>commented out</strong> and stale, and there is no Swagger UI. On a fresh database the
+        endpoints answer <code class="in">200</code> with empty lists. Two routes must be fixed in the code first — see
+        <a href="#issues">Known issues</a> — one of which crashes startup, and the <code class="in">OrderStatusHistories</code>
+        projection which throws at runtime.</p></div>
+      <div class="note tip"><span class="lab">Using LocalDB</span>
+        <p>If no SQL Server is installed, install <strong>SQL Server LocalDB</strong> and point the connection string at
+        <code class="in">Server=(localdb)\\mssqllocaldb;Database=Sanaee_Delivery;Trusted_Connection=True;TrustServerCertificate=True;</code>
+        — it can be supplied via the env var <code class="in">ConnectionStrings__DefaultConnection</code> without touching
+        the committed config.</p></div>
+      <p class="muted">Smoke-test a public read once running:</p>
+      <div class="code" data-lang="bash"><div class="bar"><span class="lang">bash</span><button class="copy">Copy</button></div><pre>
+curl http://localhost:5270/api/Categories
+# → [{ "categoryId": 1, "name": "Plumbing", ... }]</pre></div>
+    </section>
+
+    <!-- STACK -->
+    <section id="stack">
+      <h2 class="sec">Technology stack</h2>
+      <table>
+        <thead><tr><th>Concern</th><th>Choice</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Runtime</td><td>.NET 10</td><td>Every project targets <code class="in">net10.0</code>.</td></tr>
+          <tr><td>Web</td><td>ASP.NET Core controllers</td><td>Attribute routing, one controller per resource.</td></tr>
+          <tr><td>ORM</td><td>EF Core 10 + SQL Server</td><td>Migrations-first; 12 migrations in the history.</td></tr>
+          <tr><td>Messaging</td><td>MediatR</td><td>Commands / Queries / Notifications; one pipeline behaviour.</td></tr>
+          <tr><td>Mapping</td><td>AutoMapper</td><td>~18 profiles; read models built with <code class="in">ProjectTo</code>.</td></tr>
+          <tr><td>Validation</td><td>FluentValidation</td><td>Assembly-scanned; run by <code class="in">ValidationBehavior&lt;,&gt;</code>.</td></tr>
+          <tr><td>Realtime</td><td>SignalR</td><td>An empty <code class="in">ChatHub</code> at <code class="in">/hubs/chat</code>.</td></tr>
+          <tr><td>Errors</td><td>IExceptionHandler + ProblemDetails</td><td>One global handler maps domain exceptions to status codes.</td></tr>
+          <tr><td>Auth</td><td class="auth open">none</td><td>No scheme, no tokens, no hashing. See <a href="#security">Security</a>.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr class="rule">
+
+    <!-- ARCHITECTURE -->
+    <section id="architecture">
+      <p class="eyebrow">Architecture</p>
+      <h2 class="sec" style="margin-top:6px">Four layers, one direction</h2>
+      <p>Outer layers know about inner layers, never the reverse. Domain sits at the centre (concepts) and the API at the
+        edge (HTTP); Application and Persistence sit in between as the contract and the machinery.</p>
+
+      <svg class="arch" viewBox="0 0 760 300" role="img" aria-label="Layered architecture">
+        <defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+          <path d="M0,0 L9,4.5 L0,9 Z" fill="#c9bd9c"/></marker></defs>
+        <rect class="box api" x="20" y="28" width="196" height="96" rx="6"/>
+        <text class="t-title" x="36" y="56">API (Presentation)</text>
+        <text class="t-sub" x="36" y="76">19 controllers · Program.cs</text>
+        <text class="t-sub" x="36" y="92">GlobalExceptionHandler · ChatHub</text>
+        <rect class="box infra" x="20" y="170" width="196" height="104" rx="6"/>
+        <text class="t-title" x="36" y="198">Persistence</text>
+        <text class="t-sub" x="36" y="218">AppDbContext · 19 DbSets</text>
+        <text class="t-sub" x="36" y="234">configs · interceptors</text>
+        <text class="t-sub" x="36" y="250">repositories · UnitOfWork</text>
+        <rect class="box app" x="304" y="90" width="196" height="118" rx="6"/>
+        <text class="t-title" x="320" y="118">Application</text>
+        <text class="t-sub" x="320" y="138">Features/{Area}/Commands</text>
+        <text class="t-sub" x="320" y="154">/Queries · /Dtos · /Profiles</text>
+        <text class="t-sub" x="320" y="170">behaviours · contracts</text>
+        <text class="t-sub" x="320" y="186">common models · exceptions</text>
+        <rect class="box dom" x="566" y="116" width="174" height="70" rx="6"/>
+        <text class="t-title" x="582" y="144">Domain</text>
+        <text class="t-sub" x="582" y="164">entities · enums · events</text>
+        <path class="arrow" d="M216,70 C266,70 274,135 304,135"/>
+        <path class="arrow" d="M216,210 C266,210 274,170 304,170"/>
+        <path class="arrow" d="M500,150 L566,150"/>
+        <text class="lbl" x="222" y="92">uses</text>
+        <text class="lbl" x="222" y="196">implements contracts</text>
+        <text class="lbl" x="506" y="142">references</text>
+      </svg>
+
+      <h4>Domain <span class="muted">— <code class="in">src/Core/Domain</code></span></h4>
+      <p class="muted">Pure C# domain concepts: entities, enums, domain events and the <code class="in">DomainException</code>.
+        No EF, no HTTP.</p>
+      <h4>Application <span class="muted">— <code class="in">src/Core/Application</code></span></h4>
+      <p class="muted">The use-case layer: one folder per feature holding Commands, Queries, DTOs, AutoMapper profiles and
+        validators, plus cross-cutting behaviours and persistence contracts (<code class="in">IUnitOfWork</code>, repositories).</p>
+      <h4>Persistence <span class="muted">— <code class="in">src/Infrastructure/Persistence</code></span></h4>
+      <p class="muted">The EF Core implementation: the <code class="in">AppDbContext</code>, per-entity configurations,
+        interceptors, generic + specialised repositories, Unit of Work, migrations and stub infrastructure services.</p>
+      <h4>API <span class="muted">— <code class="in">src/Presentation/API</code></span></h4>
+      <p class="muted">The HTTP edge: controllers, the composition root, the global exception handler and the SignalR hub.</p>
+
+      <div class="expert"><span class="lab">Expert note — the dependency rule</span>
+        <p><code class="in">Domain</code> references nothing; <code class="in">Application</code> references Domain;
+        <code class="in">Persistence</code> references Application (and therefore Domain); <code class="in">API</code> references
+        Application + Persistence. Controllers depend only on MediatR's <code class="in">ISender</code>, never on concrete
+        handlers, so the HTTP edge stays thin.</p></div>
+    </section>
+
+    <!-- LIFECYCLE -->
+    <section id="lifecycle">
+      <h3>Request lifecycle</h3>
+      <p>A call such as <code class="in">GET /api/Orders/admin?pageNumber=1&amp;pageSize=20</code> travels:</p>
+      <ol>
+        <li><strong>GlobalExceptionHandler</strong> wraps the pipeline first, so any thrown exception becomes a
+          <code class="in">ProblemDetails</code>.</li>
+        <li><strong>Routing</strong> selects the controller action via attribute routes.</li>
+        <li>The controller binds the query object and calls <code class="in">_mediator.Send(query)</code>.</li>
+        <li><strong>ValidationBehavior</strong> runs the matching FluentValidation validator; failures throw
+          <code class="in">ValidationException</code>.</li>
+        <li>The <strong>handler</strong> queries through <code class="in">IUnitOfWork.Repository&lt;T&gt;()</code>, projects with
+          AutoMapper, and returns a <code class="in">PagedResult&lt;T&gt;</code>.</li>
+        <li>EF Core translates LINQ to SQL Server and materialises the page.</li>
+        <li>The controller returns the DTO, serialised as JSON (camelCase, enums as strings).</li>
+      </ol>
+      <div class="expert"><span class="lab">Expert note — why DTOs are projected</span>
+        <p>Read queries use <code class="in">.ProjectTo&lt;TDto&gt;(mapper.ConfigurationProvider)</code> over an
+        <code class="in">AsNoTracking()</code> <code class="in">IQueryable</code>, so only the DTO's columns are selected in SQL and
+        no change tracking is allocated. This is efficient — but it is also how the
+        <a href="#issues">OrderStatusHistories bug</a> slipped in: the projection source type and the profile's
+        <code class="in">CreateMap</code> source type must agree.</p></div>
+    </section>
+
+    <!-- LAYOUT -->
+    <section id="layout">
+      <h3>Project layout</h3>
+      <div class="code" data-lang="text"><div class="bar"><span class="lang">tree</span><button class="copy">Copy</button></div><pre>
+Sanaee Delivery.slnx                 solution (4 projects)
+├─ src/
+│  ├─ Core/
+│  │  ├─ Domain/                      Domain.csproj
+│  │  │  ├─ Common/BaseEntity.cs       Id + domain-events bag
+│  │  │  ├─ Entities/                 20 entities (User, Order, Offer …)
+│  │  │  ├─ Enums/                    14 enums
+│  │  │  ├─ Events/                   domain events
+│  │  │  ├─ Exceptions/               DomainException
+│  │  │  └─ Contract/ISoftDeletable.cs
+│  │  └─ Application/                 Application.csproj
+│  │     ├─ DependencyInjection.cs    AddApplicationServices()
+│  │     ├─ Common/                   Models · Extensions · Contracts
+│  │     ├─ Behaviours/               ValidationBehavior (LoggingBehavior unused)
+│  │     └─ Features/{Area}/          Commands · Queries · Dtos · Profiles
+│  └─ Infrastructure/
+│     └─ Persistence/                 Persistence.csproj
+│        ├─ DependencyInjection.cs    AddInfrastructureServices()
+│        ├─ AppDbContext.cs           DbSets + SaveChangesAsync override
+│        ├─ Config/                   19 IEntityTypeConfiguration classes
+│        ├─ Interceptors/             SoftDelete · DispatchDomainEvents
+│        ├─ Repositories/             BaseRepository + 3 specialised + UnitOfWork
+│        ├─ Services/                 Notification · Payment · ProviderPenalty (stubs)
+│        ├─ Seed/DbInitializer.cs     fully commented out (stale)
+│        └─ Migrations/               12 migrations
+└─ Presentation/
+   └─ API/                            API.csproj
+      ├─ Program.cs                   composition root
+      ├─ Controllers/                 19 controllers
+      ├─ Exceptions/GlobalExceptionHandler.cs
+      └─ Hubs/ChatHub.cs              SignalR</pre></div>
+    </section>
+
+    <!-- PROGRAM -->
+    <section id="program">
+      <h3>Composition root — <code class="in">Program.cs</code></h3>
+      <p>Top-level statements wire the whole application. The pipeline is deliberately minimal.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — Program.cs (abridged)</span><button class="copy">Copy</button></div><pre>
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMemoryCache();                              // OTP store
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler&lt;GlobalExceptionHandler&gt;();
+builder.Services.AddControllers()
+    .AddJsonOptions(o =&gt; o.JsonSerializerOptions.Converters
+        .Add(new JsonStringEnumConverter()));                   // enums as strings
+builder.Services.AddApplicationServices();                      // MediatR + AutoMapper + validators
+builder.Services.AddInfrastructureServices(builder.Configuration); // DbContext + repos + UoW
+builder.Services.AddSignalR();
+
+var app = builder.Build();
+
+app.UseExceptionHandler();
+// if (seed) await DbInitializer.SeedAsync(app.Services);        // DISABLED
+app.UseHttpsRedirection();
+app.UseAuthorization();                                         // no authentication scheme!
+app.MapHub&lt;ChatHub&gt;("/hubs/chat");
+app.MapControllers();
+app.Run();</pre></div>
+      <div class="note warn"><span class="lab">What is missing from the pipeline</span>
+        <p>No <code class="in">UseCors()</code>, no <code class="in">UseAuthentication()</code>, no Swagger/OpenAPI middleware, and no
+        auto-migration or seeding. The <code class="in">launchSettings.json</code> still opens <code class="in">/swagger</code>, which will 404.</p></div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- SHAPE -->
+    <section id="shape">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Response shape</h2>
+      <p>There is <strong>no success envelope</strong>. A controller returns the DTO directly, or a
+        <code class="in">PagedResult&lt;T&gt;</code> for lists. Only <em>errors</em> get a wrapper, and it is the standard
+        <code class="in">ProblemDetails</code> shape produced by ASP.NET Core.</p>
+      <div class="tabs">
+        <button class="active" data-tab="r1">Single object</button>
+        <button data-tab="r2">Paged list</button>
+        <button data-tab="r3">Validation error</button>
+      </div>
+      <div class="tabpane active" id="r1">
+        <div class="code" data-lang="json"><div class="bar"><span class="lang">json</span><button class="copy">Copy</button></div><pre>
+{ "categoryId": 1, "name": "Plumbing",
+  "description": "Plumbing & pipe repair", "isActive": true }</pre></div>
+      </div>
+      <div class="tabpane" id="r2">
+        <div class="code" data-lang="json"><div class="bar"><span class="lang">json</span><button class="copy">Copy</button></div><pre>
+{ "items": [ { "orderId": 1, … } ],
+  "pageNumber": 1, "pageSize": 20, "totalCount": 42, "totalPages": 3,
+  "hasPreviousPage": false, "hasNextPage": true }</pre></div>
+      </div>
+      <div class="tabpane" id="r3">
+        <div class="code" data-lang="json"><div class="bar"><span class="lang">json</span><button class="copy">Copy</button></div><pre>
+{ "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "Validation Failed", "status": 400,
+  "errors": { "PageSize": [ "Page size must be between 1 and 100." ] } }</pre></div>
+      </div>
+      <div class="expert"><span class="lab">Expert note — PagedResult</span>
+        <p><code class="in">PagedResult&lt;T&gt;</code> lives in <code class="in">Core.Application.Common.Models</code> and exposes
+        <code class="in">Items, PageNumber, PageSize, TotalCount, TotalPages, HasPreviousPage, HasNextPage</code>. It is produced by a
+        <code class="in">ToPagedListAsync(pageNumber, pageSize)</code> extension over <code class="in">IQueryable</code>. The default
+        <code class="in">pageSize</code> is small and every list validator caps it at <strong>100</strong>.</p></div>
+    </section>
+
+    <!-- ERRORS -->
+    <section id="errors">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Error handling</h2>
+      <p>Handlers and domain entities <em>throw</em>. A single <code class="in">GlobalExceptionHandler</code> (an
+        <code class="in">IExceptionHandler</code>) translates each exception type to a status code and a
+        <code class="in">ProblemDetails</code> body. Controllers contain no try/catch.</p>
+      <table>
+        <thead><tr><th>Thrown</th><th>HTTP</th><th>Produced by</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">ValidationException</code></td><td>400</td><td>FluentValidation behaviour / validators.</td></tr>
+          <tr><td><code class="in">BadRequestException</code></td><td>400</td><td>Command handlers (e.g. wrong OTP).</td></tr>
+          <tr><td><code class="in">NotFoundException</code></td><td>404</td><td>Handlers when an id does not exist.</td></tr>
+          <tr><td><code class="in">ConflictException</code></td><td>409</td><td>State conflicts.</td></tr>
+          <tr><td><code class="in">DomainException</code></td><td>400</td><td>Entity invariants (e.g. accepting an offer twice).</td></tr>
+          <tr><td>anything else</td><td>500</td><td>Logged; no internal detail leaked.</td></tr>
+        </tbody>
+      </table>
+      <div class="code" data-lang="json"><div class="bar"><span class="lang">json — a domain rule firing</span><button class="copy">Copy</button></div><pre>
+// Order.StartWork() when the status is not OfferAccepted:
+{ "type": "…", "title": "Invalid Operation!", "status": 400,
+  "detail": "You must accept offer for this order first." }</pre></div>
+    </section>
+
+    <!-- VALIDATION -->
+    <section id="validation">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Validation</h2>
+      <p>Every command/query has a FluentValidation validator, discovered by assembly scan in
+        <code class="in">AddApplicationServices()</code> and executed automatically by a MediatR pipeline behaviour before the
+        handler runs.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — ValidationBehavior (abridged)</span><button class="copy">Copy</button></div><pre>
+public class ValidationBehavior&lt;TRequest, TResponse&gt;(
+    IEnumerable&lt;IValidator&lt;TRequest&gt;&gt; validators)
+    : IPipelineBehavior&lt;TRequest, TResponse&gt;
+{
+    public async Task&lt;TResponse&gt; Handle(TRequest request,
+        RequestHandlerDelegate&lt;TResponse&gt; next, CancellationToken ct)
+    {
+        foreach (var v in validators)
+        {
+            var result = await v.ValidateAsync(request, ct);
+            if (!result.IsValid)
+                throw new ValidationException(result.Errors);
+        }
+        return await next();
+    }
+}</pre></div>
+      <div class="note warn"><span class="lab">Two validators validate the wrong type</span>
+        <p><code class="in">GetProviderCategoryByIdQueryValidator</code> validates a DTO instead of the query, and
+        <code class="in">GetDefaultAddressQueryValidator</code> validates <code class="in">GetUserAddressesQuery</code>. Those queries
+        therefore run unvalidated. See <a href="#issues">Known issues</a>.</p></div>
+    </section>
+
+    <!-- DATA -->
+    <section id="data">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">The data layer (EF Core)</h2>
+      <p><code class="in">AppDbContext</code> exposes one <code class="in">DbSet</code> per aggregate — 19 in total — and each is
+        configured by a dedicated <code class="in">IEntityTypeConfiguration</code> in <code class="in">Persistence/Config</code>.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — AppDbContext (abridged)</span><button class="copy">Copy</button></div><pre>
+public class AppDbContext(DbContextOptions&lt;AppDbContext&gt; options)
+    : DbContext(options)
+{
+    public DbSet&lt;User&gt; Users =&gt; Set&lt;User&gt;();
+    public DbSet&lt;Provider&gt; Providers =&gt; Set&lt;Provider&gt;();
+    public DbSet&lt;Order&gt; Orders =&gt; Set&lt;Order&gt;();
+    public DbSet&lt;Offer&gt; Offers =&gt; Set&lt;Offer&gt;();
+    public DbSet&lt;Message&gt; Messages =&gt; Set&lt;Message&gt;();
+    public DbSet&lt;Wallet&gt; Wallets =&gt; Set&lt;Wallet&gt;();
+    public DbSet&lt;WalletTransaction&gt; WalletTransactions =&gt; Set&lt;WalletTransaction&gt;();
+    public DbSet&lt;Payment&gt; Payments =&gt; Set&lt;Payment&gt;();
+    public DbSet&lt;CancelationReason&gt; CancelationReasons =&gt; Set&lt;CancelationReason&gt;();
+    public DbSet&lt;OrderStatusHistory&gt; OrderStatusHistories =&gt; Set&lt;OrderStatusHistory&gt;();
+    public DbSet&lt;ProviderCategory&gt; ProviderCategories =&gt; Set&lt;ProviderCategory&gt;();
+    public DbSet&lt;ProviderDocument&gt; ProviderDocuments =&gt; Set&lt;ProviderDocument&gt;();
+    public DbSet&lt;ProviderStatusHistory&gt; ProviderStatusHistories =&gt; Set&lt;ProviderStatusHistory&gt;();
+    public DbSet&lt;ApplicationHistory&gt; ApplicationHistories =&gt; Set&lt;ApplicationHistory&gt;();
+    public DbSet&lt;AuditLog&gt; AduitLogs =&gt; Set&lt;AuditLog&gt;();     // (misspelled)
+    // + Addresses · UserPhones · Categories · Reviews
+    protected override void OnModelCreating(ModelBuilder b)
+    { b.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly); }
+}</pre></div>
+      <div class="note warn"><span class="lab">Spelling worth knowing</span>
+        <p>The audit-log set is spelled <code class="in">AduitLogs</code> (missing the “d” in Audit). The table name follows it,
+        so raw SQL and the property must both use the typo.</p></div>
+      <h4>Migrations</h4>
+      <p>Twelve migrations build the schema, from the initial split through wall-entity and audit-log reworks to order fixes:</p>
+      <div class="code" data-lang="text"><div class="bar"><span class="lang">text</span><button class="copy">Copy</button></div><pre>
+20260807230706_Initial_Migration           20260827025513_AddIndexToWallet
+20260824200400_AddIsDefaultProperity       20260831045832_AddAuditLog (approx.)
+20260827020452_EditWalletEntity            20260827025513… → order/offer edits
+…                                           202609****_Edit Order / Repair Order Entity</pre></div>
+      <div class="expert"><span class="lab">Expert note — no auto-migrate</span>
+        <p>The app never calls <code class="in">Database.Migrate()</code>. On a brand-new machine the first request that touches the
+        database fails until <code class="in">dotnet ef database update</code> is run against the API's startup project.</p></div>
+    </section>
+
+    <!-- DOMAIN -->
+    <section id="domain">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Domain model</h2>
+      <p>Twenty entities, most with public setters. Three extend <code class="in">BaseEntity</code> (an <code class="in">int Id</code>
+        plus a domain-events bag) and four implement <code class="in">ISoftDeletable</code>.</p>
+      <table>
+        <thead><tr><th>Entity</th><th>Key</th><th>Notable members</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">User</code></td><td>UserId</td><td>Freeze() / Unfreeze(); <em>soft-deletable</em></td></tr>
+          <tr><td><code class="in">Provider</code></td><td>ProviderId</td><td>NationalNumber; owns documents &amp; categories</td></tr>
+          <tr><td><code class="in">Order</code> : BaseEntity</td><td>Id</td><td>AcceptOffer · StartWork · Complete · CancelBy*; <em>soft-deletable</em></td></tr>
+          <tr><td><code class="in">Offer</code> : BaseEntity</td><td>Id</td><td>static Create(); Accept() · Reject() · Cancel()</td></tr>
+          <tr><td><code class="in">Message</code> : BaseEntity</td><td>Id</td><td>private ctor + CreateText/Media/Location/VoiceNote; MarkAsRead()</td></tr>
+          <tr><td><code class="in">Wallet</code></td><td>WalletId</td><td>ctor(userId); Deposit/Withdraw/Freeze/Unfreeze</td></tr>
+          <tr><td><code class="in">WalletTransaction</code></td><td>TransactionId</td><td>ctor; immutable ledger row</td></tr>
+          <tr><td><code class="in">Payment</code></td><td>PaymentId</td><td>ctor; MarkAsSuccess/Failed/Refund</td></tr>
+          <tr><td><code class="in">Review</code></td><td>ReviewId</td><td>mutual rating; <em>soft-deletable</em></td></tr>
+          <tr><td><code class="in">Category</code></td><td>CategoryId</td><td>self-referencing ParentCategory; <em>soft-deletable</em></td></tr>
+          <tr><td colspan="3" class="muted">+ Address · UserPhone · CancelationReason · OrderStatusHistory · ProviderCategory · ProviderDocument · ProviderStatusHistory · ApplicationHistory · AuditLog</td></tr>
+        </tbody>
+      </table>
+      <h4>The order state machine</h4>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — Order (the interesting parts)</span><button class="copy">Copy</button></div><pre>
+public void AcceptOffer(int offerId)
+{
+    if (Status != OrderStatus.Pending)
+        throw new DomainException("You can not accept offers for this order.");
+    Status = OrderStatus.OfferAccepted;
+}
+
+public void StartWork()
+{
+    if (Status != OrderStatus.OfferAccepted)
+        throw new DomainException("You must accept offer for this order first.");
+    Status = OrderStatus.InProgress;
+}
+
+public void Complete()
+{
+    if (Status != OrderStatus.InProgress)
+        throw new DomainException("You must start this order first.");
+    Status = OrderStatus.Completed;
+}
+
+public void CancelByAdmin(int ReasonId, bool IssueRefund)
+{
+    if (Status == OrderStatus.Cancelled) throw new DomainException("Order is already cancelled !");
+    if (Status == OrderStatus.Completed &amp;&amp; !IssueRefund)
+        throw new DomainException("Yos must define the refund issue first !");
+    Status = OrderStatus.Cancelled;
+    AddDomainEvent(new OrderCancelledByAdminEvent(Id, UserId, Offer?.ProviderId, ReasonId, IssueRefund));
+}</pre></div>
+    </section>
+
+    <!-- EVENTS -->
+    <section id="events">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Domain events</h2>
+      <p>Entities raise events through <code class="in">AddDomainEvent</code>; a persistence interceptor collects them on
+        <code class="in">SaveChanges</code> and republishes them through MediatR, where handlers react (e.g. notify the other
+        party, reopen competing offers).</p>
+      <table>
+        <thead><tr><th>Event</th><th>Raised by</th><th>Intent</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">OfferCreatedEvent</code></td><td><code class="in">Offer.Create()</code></td><td>Notify the customer of a new bid.</td></tr>
+          <tr><td><code class="in">OfferAcceptedEvent</code></td><td><code class="in">Offer.Accept()</code></td><td>Close the bidding, inform the winner.</td></tr>
+          <tr><td><code class="in">MessageSentDomainEvent</code></td><td><code class="in">Message.Create*</code></td><td>Fan out over SignalR (<code class="in">ChatHub</code>).</td></tr>
+          <tr><td><code class="in">OrderCancelledByCustomerEvent</code></td><td>Order.CancelByCustomer</td><td>Notify provider.</td></tr>
+          <tr><td><code class="in">OrderCancelledByProviderEvent</code></td><td>Order.CancelByProvider</td><td>Reopen other offers.</td></tr>
+          <tr><td><code class="in">OrderCancelledByAdminEvent</code></td><td>Order.CancelByAdmin</td><td>Refund handling.</td></tr>
+        </tbody>
+      </table>
+      <div class="note warn"><span class="lab">Events are raised but not delivered</span>
+        <p>Because the soft-delete interceptor replaced the domain-event interceptor during registration
+        (see <a href="#interceptors">Interceptors</a>), and because <code class="in">NotificationService</code> is a stub, domain
+        events do not currently reach any real consumer. The wiring exists; the plumbing is inert.</p></div>
+    </section>
+
+    <!-- ENUMS -->
+    <section id="enums">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Status maps (enums)</h2>
+      <p>Fourteen enums drive the state machines. They serialise as <strong>strings</strong> (a
+        <code class="in">JsonStringEnumConverter</code> is registered), so clients see <code class="in">"OfferAccepted"</code>,
+        not <code class="in">2</code>.</p>
+      <table>
+        <thead><tr><th>Enum</th><th>Values</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">UserType</code></td><td>Admin=1 · Customer=2 · Provider=3</td></tr>
+          <tr><td><code class="in">OrderStatus</code></td><td>Pending · OfferAccepted · InProgress · Completed · Cancelled</td></tr>
+          <tr><td><code class="in">OfferStatus</code></td><td>Pending · Accepted · Rejected · Expired · Cancelled</td></tr>
+          <tr><td><code class="in">PaymentStatus</code></td><td>Pending · Success · Failed · Refunded</td></tr>
+          <tr><td><code class="in">PaymentMethod</code></td><td>Cash · CreditCard · Wallet · Fawry · VodafoneCash</td></tr>
+          <tr><td><code class="in">PaymentType</code></td><td>OrderPayment · WalletTopUp · SubscriptionFee</td></tr>
+          <tr><td><code class="in">TransactionType</code></td><td>Deposit · Withdrawal · OrderPayment · OrderEarning · PlatformCommission · Refund · AdminAdjustment</td></tr>
+          <tr><td><code class="in">MessageType</code></td><td>Text · Image · VoiceNote · Location · Document</td></tr>
+          <tr><td><code class="in">ProviderStatus</code></td><td>Active · Suspended · Inactive</td></tr>
+          <tr><td><code class="in">ApplicationStatus</code></td><td>Pending · Approved · Rejected · ActionRequired</td></tr>
+          <tr><td><code class="in">DocumentType</code></td><td>NationalId · CriminalRecord · WorkPermit · PersonalPhoto</td></tr>
+          <tr><td><code class="in">DocumentStatus</code></td><td>Pending · Approved · Rejected · Expired · ReUploadRequired</td></tr>
+          <tr><td><code class="in">EntityName</code> / <code class="in">ActionType</code></td><td>audit-log vocabulary (User/Wallet/Order; DeActivate/Activate/Delete/Restore/Cancellation)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECURITY -->
+    <section id="security">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Security</h2>
+      <div class="note warn"><span class="lab">There is no authentication or authorization</span>
+        <p>A repo-wide search finds no <code class="in">AddAuthentication</code>, no JWT/cookie package, and no
+        <code class="in">[Authorize]</code> attribute. <code class="in">UseAuthorization()</code> runs with no scheme, so every endpoint
+        is effectively public. Admin-only routes are “admin” in name only.</p></div>
+      <ul>
+        <li><strong>Passwords</strong> are stored and compared as <em>plaintext</em> in
+          <code class="in">CreateCustomerCommandHandler</code>, <code class="in">CreateProviderCommandHandler</code> and
+          <code class="in">ChangePasswordCommandHandler</code> — no hashing.</li>
+        <li><strong>Phone OTP</strong> is generated and cached in memory, then <em>written to the application log</em>
+          (there is no SMS integration). See <a href="#otp">Phone OTP</a>.</li>
+        <li>There is no CORS policy, so browser clients rely on a same-origin proxy or are blocked.</li>
+        <li><code class="in">ICurrentUserService</code> is declared but never implemented or registered — there is no notion of
+          “the current user” server-side.</li>
+      </ul>
+      <div class="expert"><span class="lab">Expert note — what “admin” means here</span>
+        <p>Many endpoints take an <code class="in">AdminId</code> in the route or body (e.g.
+        <code class="in">POST /api/ApplicationHistories/{AdminId}</code>). Nothing verifies that the caller is that admin; the id
+        is trusted verbatim. Treat the whole surface as trusted-network-only.</p></div>
+    </section>
+
+    <!-- CONFIG -->
+    <section id="config">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Configuration</h2>
+      <p>Configuration is plain configuration — no strongly-typed options object. The only meaningful key is the connection string.</p>
+      <div class="code" data-lang="json"><div class="bar"><span class="lang">json — appsettings.json</span><button class="copy">Copy</button></div><pre>
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=.; Database=Sanaee_Delivery; Trusted_Connection=True; TrustServerCertificate=True;"
+  },
+  "Logging": { "LogLevel": { "Default": "Information" } },
+  "AllowedHosts": "*"
+}</pre></div>
+      <p class="muted">Override per-environment with user-secrets or the double-underscore env form
+        (<code class="in">ConnectionStrings__DefaultConnection</code>), which is the least invasive way to switch a machine to LocalDB.</p>
+    </section>
+
+    <hr class="rule">
+
+    <!-- CQRS -->
+    <section id="cqrs">
+      <p class="eyebrow">Pattern</p>
+      <h2 class="sec" style="margin-top:6px">CQRS &amp; MediatR</h2>
+      <p>Each feature folder is self-contained. A command changes state and returns an id or nothing; a query reads and
+        returns a DTO. Controllers never reference handlers — only <code class="in">ISender</code>.</p>
+      <div class="code" data-lang="text"><div class="bar"><span class="lang">text — a typical feature folder</span><button class="copy">Copy</button></div><pre>
+Features/Orderes/
+├─ Commands/
+│  ├─ CreateOrder/            CreateOrderCommand + Handler
+│  ├─ CancelOrderByCustomer/  command + handler
+│  └─ StartWork/  Complete/
+├─ Queries/
+│  ├─ GetAllOrdersForAdmin/   query + handler (+ validator)
+│  └─ GetOrderById/
+├─ Dtos/                      GetOrderDto, GetAllOrdersForAdminDto …
+└─ Profiles/OrderMappingProfile.cs</pre></div>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — controller + handler pattern</span><button class="copy">Copy</button></div><pre>
+[HttpPatch("accept/{OfferId}")]
+public async Task&lt;ActionResult&gt; AcceptOffer(int OfferId)
+    =&gt; Ok(await _mediator.Send(new AcceptOfferCommand(OfferId)));
+
+// --- handler ---
+public sealed class AcceptOfferCommandHandler(IUnitOfWork uow)
+    : IRequestHandler&lt;AcceptOfferCommand, Unit&gt;
+{
+    public async Task&lt;Unit&gt; Handle(AcceptOfferCommand req, CancellationToken ct)
+    {
+        var offer = await uow.Repository&lt;Offer&gt;().GetByIdAsync(req.OfferId, ct)
+            ?? throw new NotFoundException(nameof(Offer), req.OfferId);
+        offer.Accept();                         // domain method raises an event
+        await uow.SaveChangesAsync(ct);
+        return Unit.Value;
+    }
+}</pre></div>
+      <div class="expert"><span class="lab">Expert note — one behaviour only</span>
+        <p>Only <code class="in">ValidationBehavior</code> is registered. A <code class="in">LoggingBehavior</code> exists but is
+        <code class="in">internal</code> and never wired, and there is no transaction behaviour — each handler is responsible for its
+        own <code class="in">SaveChangesAsync</code>.</p></div>
+    </section>
+
+    <!-- UOW -->
+    <section id="uow">
+      <p class="eyebrow">Pattern</p>
+      <h2 class="sec" style="margin-top:6px">Repository &amp; Unit of Work</h2>
+      <p>Handlers depend on <code class="in">IUnitOfWork</code> (in <code class="in">Application.Common.Contracts.Persistence</code>).
+        It exposes a generic <code class="in">Repository&lt;T&gt;()</code> plus three specialised repositories
+        (<code class="in">Address</code>, <code class="in">UserPhone</code>, <code class="in">Wallet</code>) and a single
+        <code class="in">SaveChangesAsync</code> that commits all tracked changes atomically.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — the read pattern</span><button class="copy">Copy</button></div><pre>
+var page = await uow.Repository&lt;Order&gt;()
+    .GetQueryable()
+    .AsNoTracking()
+    .OrderByDescending(o =&gt; o.Id)
+    .ProjectTo&lt;GetAllOrdersForAdminDto&gt;(mapper.ConfigurationProvider)
+    .ToPagedListAsync(query.PageNumber, query.PageSize, ct);</pre></div>
+      <div class="note warn"><span class="lab">Blanket filters disabled</span>
+        <p>Several list handlers call <code class="in">.IgnoreQueryFilters()</code>, which bypasses EF's soft-delete global filters and
+        can return soft-deleted rows. It is convenient, but a maintenance trap.</p></div>
+    </section>
+
+    <!-- INTERCEPTORS -->
+    <section id="interceptors">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Interceptors</h2>
+      <p>Two EF Core interceptors exist:</p>
+      <ul>
+        <li><strong>SoftDeleteInterceptor</strong> — rewrites <code class="in">Delete</code> into
+          <code class="in">IsDeleted = true</code> for <code class="in">ISoftDeletable</code> entities.</li>
+        <li><strong>DispatchDomainEventsInterceptor</strong> — after save, collects each entity's domain events and publishes them
+          through MediatR.</li>
+      </ul>
+      <div class="note warn"><span class="lab">Only the second one is effective</span>
+        <p><code class="in">AddInfrastructureServices()</code> registers <code class="in">AddDbContext&lt;AppDbContext&gt;</code>
+        <em>twice</em>: the first call attaches the soft-delete interceptor, the second (with the domain-events interceptor) becomes
+        the effective registration. The soft-delete interceptor therefore never runs — deletes are hard deletes, and soft-delete
+        query filters have nothing to hide.</p></div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- ORDER -->
+    <section id="order">
+      <p class="eyebrow">Deep dive</p>
+      <h2 class="sec" style="margin-top:6px">Order lifecycle</h2>
+      <p>A job moves through five states driven by explicit domain methods, each guarding the previous state:</p>
+      <div class="code" data-lang="text"><div class="bar"><span class="lang">text</span><button class="copy">Copy</button></div><pre>
+Pending ──accept offer──▶ OfferAccepted ──start work──▶ InProgress ──complete──▶ Completed
+   │                          │                              │
+   └────────── cancel (customer / provider / admin) ──────────┴──▶ Cancelled</pre></div>
+      <table>
+        <thead><tr><th>Transition</th><th>Endpoint</th><th>Guard</th></tr></thead>
+        <tbody>
+          <tr><td>Create</td><td><code class="in">POST /api/Orders/{UserId}</code></td><td>—</td></tr>
+          <tr><td>Accept offer</td><td><code class="in">PATCH /api/Offers/accept/{id}</code></td><td>status = Pending</td></tr>
+          <tr><td>Start work</td><td><code class="in">PATCH /api/Orders/inprogress/{id}</code></td><td>status = OfferAccepted</td></tr>
+          <tr><td>Complete</td><td><code class="in">PATCH /api/Orders/complete/{id}</code></td><td>status = InProgress</td></tr>
+          <tr><td>Cancel</td><td><code class="in">PATCH /api/Orders/{customer|provider|admin}-cancel</code></td><td>not Completed / not InProgress</td></tr>
+        </tbody>
+      </table>
+      <div class="expert"><span class="lab">Expert note — cancellation rules differ per actor</span>
+        <p>A customer may not cancel a completed or in-progress order; a provider may cancel only an accepted or in-progress
+        order; an admin may cancel anything but a completed order requires an explicit <code class="in">IssueRefund</code> flag.
+        All three raise a distinct cancellation event carrying the reason id.</p></div>
+    </section>
+
+    <!-- OFFERS -->
+    <section id="offers">
+      <p class="eyebrow">Deep dive</p>
+      <h2 class="sec" style="margin-top:6px">Offers &amp; bidding</h2>
+      <p>Providers bid on a pending order with a labour cost, optional material cost and an arrival time. An offer is created
+        through its factory and accepted/rejected/cancelled through domain methods that raise events.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — Offer.Create</span><button class="copy">Copy</button></div><pre>
+var offer = Offer.Create(order, providerId, laborCost, materialCost, notes, arrivalTime);
+offer.AddDomainEvent(new OfferCreatedEvent(offer, order.UserId, providerId));</pre></div>
+      <div class="note warn"><span class="lab">The offer list DTO has no id</span>
+        <p><code class="in">GetAllOffersForOrderDto</code> omits the offer id, so a client that lists offers cannot then address one to
+        accept/reject/cancel it without a separate lookup. The bundled Blazor client works around this by setting the id to 0.</p></div>
+    </section>
+
+    <!-- WALLET -->
+    <section id="wallet">
+      <p class="eyebrow">Deep dive</p>
+      <h2 class="sec" style="margin-top:6px">Wallet &amp; payments</h2>
+      <p>Every user has a wallet. Money changes through guarded domain methods so the balance can never silently go wrong,
+        and each change is mirrored by an immutable <code class="in">WalletTransaction</code> row.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — Wallet + Payment</span><button class="copy">Copy</button></div><pre>
+public void Deposit(decimal amount)
+{
+    if (amount &lt;= 0) throw new InvalidOperationException("Amount must be greater than 0.");
+    if (!IsActive)  throw new InvalidOperationException("Wallet is freezeing now.");
+    Balance += amount; UpdatedAt = DateTime.UtcNow;
+}
+
+public void Withdraw(decimal amount)
+{
+    if (amount &lt;= 0) throw new InvalidOperationException("Amount must be greater than 0.");
+    if (!IsActive)  throw new InvalidOperationException("Wallet is freezeing now.");
+    if (Balance &lt; amount) throw new InvalidOperationException("Your balance does not enough …");
+    Balance -= amount; UpdatedAt = DateTime.UtcNow;
+}
+
+// Payment: starts Pending, then a state machine of its own
+new Payment(amount, method, type, userId, orderId).MarkAsSuccess("TXN-0001");</pre></div>
+      <table>
+        <thead><tr><th>TransactionType</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Deposit / Withdrawal</td><td>Top-ups and cash-outs.</td></tr>
+          <tr><td>OrderPayment / OrderEarning</td><td>Customer charge and provider credit.</td></tr>
+          <tr><td>PlatformCommission</td><td>Sanaee's cut.</td></tr>
+          <tr><td>Refund / AdminAdjustment</td><td>Reversals and manual corrections.</td></tr>
+        </tbody>
+      </table>
+      <div class="note warn"><span class="lab">Payments are simulated</span>
+        <p><code class="in">PaymentService</code> is a stub that returns <code class="in">Task.CompletedTask</code> — there is no gateway
+        integration, so “successful” payments exist only as database rows.</p></div>
+    </section>
+
+    <!-- OTP -->
+    <section id="otp">
+      <p class="eyebrow">Deep dive</p>
+      <h2 class="sec" style="margin-top:6px">Phone OTP verification</h2>
+      <p>Phone numbers are verified by a one-time code. The code is generated server-side, cached in memory for ten minutes,
+        and — for development — written to the log. There is no SMS provider wired up.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — SendphoneOtpCommandHandler (abridged)</span><button class="copy">Copy</button></div><pre>
+var code = Random.Shared.Next(100000, 999999).ToString();
+_cache.Set($"OTP:{phoneNumber}", code, TimeSpan.FromMinutes(10));
+_logger.LogInformation("OTP for {Phone} is {Code}", phoneNumber, code);   // ⚠ logged
+return "Code sent Successfully";</pre></div>
+      <div class="note warn"><span class="lab">Verification is never persisted</span>
+        <p>In <code class="in">VerifyPhoneOtpCommandHandler</code> the <code class="in">IsVerified</code> / <code class="in">IsPrimary</code>
+        assignments are commented out, so a “verified” phone is not marked verified in the database. Because the cache is
+        in-process, codes also vanish on restart and are not shared across instances.</p></div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- API EXPLORER -->
+    <section id="api">
+      <p class="eyebrow">Reference</p>
+      <h2 class="sec" style="margin-top:6px">API explorer</h2>
+      <p class="muted">All routes are under <code class="in">/api</code>. The “Intended for” column reflects naming and common
+        sense — remember that <strong>nothing enforces it</strong> (see <a href="#security">Security</a>). Search or filter by group.</p>
+      <div class="controls">
+        <input id="ep-search" type="search" placeholder="Search endpoints — try 'order', 'otp', 'wallet' …">
+        <div class="chips" id="ep-chips"></div>
+        <div class="ep-count" id="ep-count"></div>
+      </div>
+      <div id="ep-list"></div>
+    </section>
+
+    <!-- ISSUES -->
+    <section id="issues">
+      <p class="eyebrow">Reference</p>
+      <h2 class="sec" style="margin-top:6px">Known issues</h2>
+      <p>The backend runs, but these defects are worth knowing before you build on it.</p>
+      <table>
+        <thead><tr><th>#</th><th>Issue</th><th>Impact</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>Route typo</strong> — <code class="in">[Route("api/[contorller]")]</code> on the histories controller</td><td>ASP.NET Core treats <code class="in">[contorller]</code> as an unknown token and throws at <code class="in">MapControllers</code> — <strong>the whole API fails to start</strong> until fixed to <code class="in">[controller]</code>.</td></tr>
+          <tr><td>2</td><td>Wrong projection source in <code class="in">GetAllHistoriesForAdminQueryHandler</code></td><td>Queries <code class="in">Repository&lt;Order&gt;</code> but maps to a history DTO → <code class="in">GET /api/OrderStatusHistories/admin</code> returns 500.</td></tr>
+          <tr><td>3</td><td>Missing AutoMapper map for <code class="in">GetCancelationReasonByIdDto</code></td><td><code class="in">GET /api/CancelationReason/{id}</code> throws <code class="in">AutoMapperMappingException</code>.</td></tr>
+          <tr><td>4</td><td>Soft-delete interceptor not registered (double <code class="in">AddDbContext</code>)</td><td>Deletes are hard; soft-delete filters are inert.</td></tr>
+          <tr><td>5</td><td>Soft-delete filters bypassed with <code class="in">IgnoreQueryFilters()</code></td><td>List queries can return deleted rows.</td></tr>
+          <tr><td>6</td><td>Two validators target the wrong type</td><td>ProviderCategory-by-id and default-address queries skip validation.</td></tr>
+          <tr><td>7</td><td>Inverted <code class="in">OfferConfiguration</code> query filter using <code class="in">DateTime.UtcNow</code></td><td>Unstable/incorrect global filter.</td></tr>
+          <tr><td>8</td><td>Nested duplicate namespace in <code class="in">OrderConfiguration.cs</code></td><td>Confusing type identity.</td></tr>
+          <tr><td>9</td><td><code class="in">AduitLogs</code> misspelling</td><td>Table/property typo leaks into tooling.</td></tr>
+          <tr><td>10</td><td>Seeder commented out and stale; no auto-migrate</td><td>Fresh DB starts empty and won't create tables without <code class="in">dotnet ef database update</code>.</td></tr>
+          <tr><td>11</td><td>No auth, plaintext passwords, OTP logged</td><td>Critical security gap.</td></tr>
+          <tr><td>12</td><td><code class="in">AddControllers()</code> registered twice; no CORS/Swagger</td><td>Minor duplication; Swagger link 404s.</td></tr>
+          <tr><td>13</td><td><code class="in">ICurrentUserService</code> declared but unimplemented; <code class="in">LoggingBehavior</code> unused</td><td>Dead contract / dead code.</td></tr>
+          <tr><td>10–11-ish</td><td>Service stubs (<code class="in">NotificationService</code>, <code class="in">PaymentService</code>, <code class="in">ProviderPenaltyService</code>)</td><td>Domain events and refunds have no effect.</td></tr>
+        </tbody>
+      </table>
+      <div class="note tip"><span class="lab">Two fixes ship with this UI</span>
+        <p>The companion frontend repository fixes issue #1 (the route typo that blocks startup) and points the client at the
+        corrected <code class="in">api/OrderStatusHistories/admin</code> route, plus caps page size at 100. Issue #2 (the wrong
+        projection) is left untouched and surfaces as an empty/error state in the UI.</p></div>
+    </section>
+
+    <!-- BUILD -->
+    <section id="build">
+      <p class="eyebrow">Reference</p>
+      <h2 class="sec" style="margin-top:6px">Build &amp; run</h2>
+      <div class="code" data-lang="bash"><div class="bar"><span class="lang">bash</span><button class="copy">Copy</button></div><pre>
+dotnet restore "Sanaee Delivery.slnx"
+dotnet build  "Sanaee Delivery.slnx"
+dotnet run  --project src/Presentation/API --launch-profile http
+
+dotnet ef migrations list   --project src/Infrastructure/Persistence --startup-project src/Presentation/API
+dotnet ef database update   --project src/Infrastructure/Persistence --startup-project src/Presentation/API</pre></div>
+      <table>
+        <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>HTTP URL</td><td><code class="in">http://localhost:5270</code></td></tr>
+          <tr><td>Base path</td><td><code class="in">/api</code></td></tr>
+          <tr><td>SignalR hub</td><td><code class="in">/hubs/chat</code></td></tr>
+          <tr><td>Connection key</td><td><code class="in">ConnectionStrings:DefaultConnection</code></td></tr>
+          <tr><td>Swagger</td><td class="auth open">not configured</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- GLOSSARY -->
+    <section id="glossary">
+      <p class="eyebrow">Reference</p>
+      <h2 class="sec" style="margin-top:6px">Glossary</h2>
+      <details class="faq"><summary>Clean Architecture</summary><div class="b">A way of arranging code so that business rules sit at the centre and frameworks (web, database) sit at the edges, with dependencies pointing inward.</div></details>
+      <details class="faq"><summary>CQRS</summary><div class="b">Command-Query Responsibility Segregation — separating “do something” requests (commands) from “read something” requests (queries). Here both are MediatR messages.</div></details>
+      <details class="faq"><summary>MediatR</summary><div class="b">A small in-process mediator. A controller sends a message and a matching handler runs; the controller never references the handler type.</div></details>
+      <details class="faq"><summary>DTO</summary><div class="b">Data Transfer Object — a plain shape used on the wire, kept separate from the database entity.</div></details>
+      <details class="faq"><summary>DbContext</summary><div class="b">EF Core's gateway to the database, exposing <code class="in">DbSet&lt;T&gt;</code> collections queried with LINQ.</div></details>
+      <details class="faq"><summary>Migration</summary><div class="b">A versioned, code-generated change to the database schema.</div></details>
+      <details class="faq"><summary>Interceptor</summary><div class="b">A hook into EF Core's save pipeline — used here to soft-delete and to dispatch domain events.</div></details>
+      <details class="faq"><summary>Domain event</summary><div class="b">A record that “something happened” in the domain (e.g. <code class="in">OfferAcceptedEvent</code>), published so other parts of the system can react.</div></details>
+      <details class="faq"><summary>PagedResult&lt;T&gt;</summary><div class="b">The standard paged-list wrapper: items plus page metadata.</div></details>
+      <details class="faq"><summary>ProblemDetails</summary><div class="b">An RFC-7807 JSON shape (<code class="in">title</code>, <code class="in">status</code>, <code class="in">detail</code>, <code class="in">errors</code>) used for errors.</div></details>
+      <details class="faq"><summary>Unit of Work</summary><div class="b">An object that tracks changes across repositories and commits them together in one transaction.</div></details>
+
+      <div class="colophon">
+        Sanaee Delivery backend · .NET 10 documentation · base path <code class="in">/api</code> · no response envelope ·
+        errors as <code class="in">ProblemDetails</code>.
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const EP = [
+  ["POST","/Addresses","Customer","Create an address for a user."],
+  ["PUT","/Addresses/{id}","Customer","Update an address."],
+  ["DELETE","/Addresses/{id}","Customer","Delete an address."],
+  ["PATCH","/Addresses/{id}/set-default","Customer","Mark an address as the default."],
+  ["GET","/Addresses/{id}","Customer","List a user's addresses."],
+  ["GET","/Addresses/default","Customer","Get the default address for a user."],
+  ["GET","/Addresses","Admin","Get an address by id."],
+  ["PUT","/Users/{id}","Admin","Update a user."],
+  ["DELETE","/Users/{id}","Admin","Delete a user."],
+  ["PATCH","/Users/{id}","Admin","Restore a deleted user."],
+  ["PATCH","/Users/activate","Admin","Activate a user."],
+  ["PATCH","/Users/deactivate","Admin","Deactivate a user."],
+  ["POST","/Customers","Admin","Create a customer account."],
+  ["GET","/Customers/{id}","Admin","Get a customer by id."],
+  ["GET","/Customers/admin","Admin","Paged list of all customers."],
+  ["POST","/Providers","Admin","Create a provider account."],
+  ["PATCH","/Providers/{Id}","Admin","Toggle a provider's availability."],
+  ["GET","/Providers","Public","Paged list of providers."],
+  ["GET","/Providers/{Id}","Public","Get a provider by id."],
+  ["GET","/Providers/admin/{id}","Admin","Provider detail with ratings and categories."],
+  ["POST","/UserPhones/send-otp","Customer","Send (log) a phone OTP."],
+  ["POST","/UserPhones/verify-otp/{id}","Customer","Verify a phone OTP and link the phone."],
+  ["DELETE","/UserPhones/{id}","Customer","Delete one of a user's phones."],
+  ["GET","/UserPhones/{id}","Customer","List a user's phones."],
+  ["GET","/UserPhones/default/{id}","Customer","Get a user's default phone."],
+  ["PATCH","/UserPhones/set-default/{id}","Customer","Set a user's default phone."],
+  ["GET","/Categories","Public","List all categories."],
+  ["GET","/Categories/{id}","Public","Get a category by id."],
+  ["POST","/Categories","Admin","Create a category."],
+  ["PUT","/Categories/{id}","Admin","Update a category."],
+  ["DELETE","/Categories/{id}","Admin","Soft-delete a category."],
+  ["PATCH","/Categories/{id}","Admin","Restore a category."],
+  ["PATCH","/Categories/activate","Admin","Activate a category (by id in body/route)."],
+  ["PATCH","/Categories/deactivate","Admin","Deactivate a category."],
+  ["GET","/ProviderCategories/admin/{id}","Admin","Get a provider-category link by id (broken map)."],
+  ["POST","/ProviderCategories","Admin","Link a provider to a category."],
+  ["PATCH","/ProviderCategories","Admin","Change years of experience."],
+  ["POST","/Orders/{UserId}","Customer","Create an order for a user."],
+  ["GET","/Orders/{OrderId}","Admin","Get an order by id."],
+  ["GET","/Orders/customer/{CustomerId}","Customer","List a customer's orders."],
+  ["GET","/Orders/admin","Admin","Paged list of all orders."],
+  ["PATCH","/Orders/customer-cancel","Customer","Cancel an order as the customer."],
+  ["PATCH","/Orders/provider-cancel","Provider","Cancel an order as the provider."],
+  ["PATCH","/Orders/admin-cancel","Admin","Cancel an order as an admin (refund flag)."],
+  ["PATCH","/Orders/inprogress/{OrderId}","Provider","Move an order to in-progress."],
+  ["PATCH","/Orders/complete/{OrderId}","Provider","Complete an order."],
+  ["GET","/Offers","Customer","List offers for an order."],
+  ["GET","/Offers/accepted","Customer","Get the accepted offer for an order."],
+  ["GET","/Offers/{OfferId}","Customer","Get an offer by id."],
+  ["POST","/Offers","Provider","Submit an offer on an order."],
+  ["PATCH","/Offers/accept/{OfferId}","Customer","Accept an offer."],
+  ["PATCH","/Offers/reject/{OfferId}","Customer","Reject an offer."],
+  ["PATCH","/Offers/cancel/{OfferId}","Provider","Cancel an offer."],
+  ["GET","/Messages","Customer","List messages for an order."],
+  ["GET","/Messages/{id}","Customer","Get a message by id."],
+  ["POST","/Messages/text","Customer","Send a text message."],
+  ["POST","/Messages/media","Customer","Send an image/document message."],
+  ["POST","/Messages/location","Customer","Send a location message."],
+  ["POST","/Messages/voice","Customer","Send a voice-note message."],
+  ["PATCH","/Messages","Customer","Mark a message as read."],
+  ["GET","/Reviewes","Public","List reviews for a reviewee."],
+  ["GET","/Reviewes/{id}","Public","Get a review by id."],
+  ["POST","/Reviewes","Customer","Create a review."],
+  ["PUT","/Reviewes","Customer","Update a review."],
+  ["DELETE","/Reviewes/{id}","Admin","Delete a review (admin)."],
+  ["GET","/ApplicationHistories/{ProviderId}","Admin","Provider's application history."],
+  ["POST","/ApplicationHistories/{AdminId}","Admin","Record an application-history entry."],
+  ["POST","/ProviderDocuments/{id}","Admin","Create a provider document."],
+  ["PATCH","/ProviderDocuments","Admin","Change a document's status."],
+  ["GET","/ProviderDocuments/{id}","Admin","Get a document by id."],
+  ["GET","/ProviderDocuments","Admin","List a provider's documents."],
+  ["GET","/ProviderStatusHistories","Admin","List a provider's status history."],
+  ["POST","/ProviderStatusHistories/{AdminId}","Admin","Record a provider-status change."],
+  ["GET","/Wallets/Admin","Admin","Paged list of all wallets."],
+  ["GET","/Wallets/{id}","Admin","Get a wallet balance."],
+  ["POST","/Wallets/{id}","Admin","Create a wallet for a user."],
+  ["PUT","/Wallets/deposit/{id}","Admin","Deposit into a wallet."],
+  ["PUT","/Wallets/withdrow/{id}","Admin","Withdraw from a wallet."],
+  ["PATCH","/Wallets/Activate/{id}","Admin","Activate a wallet."],
+  ["PATCH","/Wallets/DeActivate/{id}","Admin","Deactivate a wallet."],
+  ["POST","/WalletTransaction","Admin","Create a wallet transaction."],
+  ["GET","/WalletTransaction/admin","Admin","Paged list of all wallet transactions."],
+  ["GET","/WalletTransaction","Admin","Transactions for a wallet."],
+  ["GET","/WalletTransaction/{id}","Admin","Get a transaction by id."],
+  ["POST","/Payments","Admin","Create a payment."],
+  ["PATCH","/Payments/success","Admin","Mark a payment successful."],
+  ["PATCH","/Payments/failed","Admin","Mark a payment failed."],
+  ["PATCH","/Payments/refund","Admin","Refund a payment."],
+  ["GET","/Payments/admin","Admin","Paged list of all payments."],
+  ["GET","/CancelationReason","Admin","List all cancellation reasons."],
+  ["GET","/CancelationReason/{ReasonId}","Admin","Get a reason by id (broken map)."],
+  ["GET","/CancelationReason/customer-reasons","Customer","Customer-facing reasons."],
+  ["GET","/CancelationReason/provider-reasons","Provider","Provider-facing reasons."],
+  ["GET","/CancelationReason/Admin-reasons","Admin","Admin-facing reasons."],
+  ["POST","/CancelationReason","Admin","Create a cancellation reason."],
+  ["PUT","/CancelationReason","Admin","Update a cancellation reason."],
+  ["DELETE","/CancelationReason","Admin","Delete a cancellation reason."],
+  ["PATCH","/CancelationReason/Activate/{ReasonId}","Admin","Activate a reason."],
+  ["PATCH","/CancelationReason/Deactivate/{ReasonId}","Admin","Deactivate a reason."],
+  ["GET","/OrderStatusHistories/admin","Admin","Paged list of order histories (broken projection)."],
+];
+const GROUPS=["All","Identity","Catalog","Orders","Offers","Messaging","Trust","Finance","Config"];
+function groupOf(p){
+  if(p.startsWith("/Users")||p.startsWith("/Customers")||p.startsWith("/Providers")||p.startsWith("/UserPhones")||p.startsWith("/Addresses"))return"Identity";
+  if(p.startsWith("/Categories")||p.startsWith("/ProviderCategories"))return"Catalog";
+  if(p.startsWith("/Orders"))return"Orders";
+  if(p.startsWith("/Offers"))return"Offers";
+  if(p.startsWith("/Messages"))return"Messaging";
+  if(p.startsWith("/Reviewes")||p.startsWith("/ApplicationHistories")||p.startsWith("/ProviderDocuments")||p.startsWith("/ProviderStatusHistories"))return"Trust";
+  if(p.startsWith("/Wallets")||p.startsWith("/WalletTransaction")||p.startsWith("/Payments"))return"Finance";
+  return"Config";
+}
+let activeGroup="All",query="";
+function renderChips(){
+  const c=document.getElementById("ep-chips");
+  c.innerHTML=GROUPS.map(g=>`<span class="chip ${g===activeGroup?'active':''}" data-g="${g}">${g}</span>`).join("");
+  c.querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{activeGroup=ch.dataset.g;renderChips();renderList();});
+}
+function renderList(){
+  const list=document.getElementById("ep-list");
+  const q=query.trim().toLowerCase();
+  const rows=EP.filter(([m,p,a,s])=>{
+    if(activeGroup!=="All"&&groupOf(p)!==activeGroup)return false;
+    if(!q)return true;
+    return (m+" "+p+" "+a+" "+s+" /api").toLowerCase().includes(q);
+  });
+  document.getElementById("ep-count").textContent=`${rows.length} endpoint${rows.length!==1?'s':''}`;
+  list.innerHTML=rows.map(([m,p,a,s])=>`
+    <div class="ep">
+      <div class="ep-head">
+        <span class="m ${m.toLowerCase()}">${m}</span>
+        <span class="ep-path">/api${p}</span>
+        <span class="auth ${a.toLowerCase()}">${a}</span>
+      </div>
+      <div class="ep-body">
+        <p style="margin:8px 0 0">${s}</p>
+        <div class="ep-meta">
+          <b>Group</b><span>${groupOf(p)}</span>
+          <b>Intended for</b><span>${a} <span class="muted">(not enforced — no auth)</span></span>
+          <b>Path</b><span><code class="in">/api${p}</code></span>
+        </div>
+      </div>
+    </div>`).join("")||`<div class="ep-count">No endpoints match.</div>`;
+  list.querySelectorAll(".ep-head").forEach(h=>h.onclick=()=>h.parentElement.classList.toggle("open"));
+}
+document.getElementById("ep-search").addEventListener("input",e=>{query=e.target.value;renderList();});
+renderChips();renderList();
+
+const root=document.documentElement, themeBtn=document.getElementById("themeToggle");
+function applyTheme(t){root.setAttribute("data-theme",t);themeBtn.textContent=t==="dark"?"Light mode":"Dark mode";}
+let savedTheme="light"; try{savedTheme=localStorage.getItem("sanaee-be-docs-theme")||"light";}catch(e){}
+applyTheme(savedTheme);
+themeBtn.onclick=()=>{const next=root.getAttribute("data-theme")==="dark"?"light":"dark";applyTheme(next);try{localStorage.setItem("sanaee-be-docs-theme",next);}catch(e){}};
+
+const expBtn=document.getElementById("expertToggle");
+expBtn.onclick=()=>{const hidden=document.documentElement.classList.toggle("hide-expert");expBtn.textContent=hidden?"Show expert notes":"Hide expert notes";};
+
+document.querySelectorAll(".tabs").forEach(t=>{
+  t.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    t.querySelectorAll("button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    let el=t.nextElementSibling;
+    while(el&&el.classList.contains("tabpane")){el.classList.toggle("active",el.id===b.dataset.tab);el=el.nextElementSibling;}
+  });
+});
+
+document.querySelectorAll(".code .copy").forEach(btn=>btn.onclick=()=>{
+  const pre=btn.closest(".code").querySelector("pre");
+  navigator.clipboard.writeText(pre.innerText.trim()).then(()=>{const t=btn.textContent;btn.textContent="Copied";setTimeout(()=>btn.textContent=t,1200);});
+});
+
+const KW={csharp:["public","private","protected","internal","sealed","abstract","class","interface","record","struct","void","async","await","return","var","new","static","readonly","using","namespace","if","else","for","foreach","while","throw","try","catch","is","not","null","true","false","string","int","bool","decimal","object","this","get","set"],bash:["cd","dotnet","curl","echo","export"],json:[],text:[]};
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+document.querySelectorAll(".code").forEach(block=>{
+  const lang=(block.dataset.lang||"text").toLowerCase();
+  const pre=block.querySelector("pre");if(!pre)return;
+  let html=esc(pre.textContent.replace(/^\n/,""));
+  if(lang==="csharp")html=html.replace(/(\/\/[^\n]*)/g,'<span class="tc">$1</span>');
+  if(lang==="bash"||lang==="text")html=html.replace(/(#[^\n]*)/g,'<span class="tc">$1</span>');
+  html=html.replace(/(&quot;[^&]*?&quot;)/g,'<span class="ts">$1</span>').replace(/('[^']*?')/g,'<span class="ts">$1</span>');
+  const kws=KW[lang]||[];if(kws.length){html=html.replace(new RegExp("\\b("+kws.join("|")+")\\b","g"),'<span class="tk">$1</span>');}
+  html=html.replace(/\b(\d+(?:\.\d+)?)\b/g,'<span class="tn">$1</span>');
+  if(lang==="csharp")html=html.replace(/(\[[A-Za-z][\w]*(?:\([^\)]*\))?\])/g,'<span class="ta">$1</span>');
+  pre.innerHTML=html;
+});
+
+const navLinks=[...document.querySelectorAll("#nav a")];
+const sections=navLinks.map(a=>document.querySelector(a.getAttribute("href"))).filter(Boolean);
+const spy=()=>{const y=window.scrollY+130;let cur=sections[0];for(const s of sections){if(s.offsetTop<=y)cur=s;}navLinks.forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+cur.id));};
+window.addEventListener("scroll",spy,{passive:true});spy();
+</script>
+</body>
+</html>

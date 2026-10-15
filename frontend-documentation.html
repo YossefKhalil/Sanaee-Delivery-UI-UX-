@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanaee Delivery Frontend — Blazor Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Themed to Sanaee — Nile teal + antique gold on warm sand. */
+  :root{
+    --paper:#f7f3ea; --surface:#fffdfb; --inset:#efe8d8; --paper-2:#fcfaf5;
+    --ink:#22302f; --navy:#0b4f4f; --muted:#6f7b7b; --faint:#9aa8a7;
+    --line:#e6ddc9; --line-2:#efe9dd;
+    --terra:#b0891f; --terra-soft:#c9a227; --sage:#2e7d5f; --rose:#9c4024;
+    --code-bg:#0e2a2a; --code-ink:#dcefe9;
+    --mono:'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+    --sans:'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --serif:'Fraunces', ui-serif, Georgia, serif;
+  }
+  html[data-theme="dark"]{
+    --paper:#0f1516; --surface:#151d1e; --inset:#1b2526; --paper-2:#121a1b;
+    --ink:#e3ece9; --navy:#8fd3cf; --muted:#98a8a6; --faint:#6f8483;
+    --line:#26333a; --line-2:#1d272b;
+    --terra:#c9a227; --terra-soft:#e0bb3a; --sage:#3ea579; --rose:#c15a37;
+    --code-bg:#0b2323; --code-ink:#d6ece7;
+  }
+
+  .shell{display:grid; grid-template-columns:282px 1fr; min-height:100vh;}
+  aside{position:sticky; top:0; height:100vh; overflow-y:auto; background:var(--paper-2);
+    border-right:1px solid var(--line); padding-bottom:40px;}
+  main{max-width:840px; margin:0 auto; padding:64px 56px 140px; width:100%;}
+
+  .brand{padding:30px 26px 22px; border-bottom:1px solid var(--line);}
+  .brand .mark{font-family:var(--serif); font-size:2.4rem; font-weight:500; color:var(--navy); letter-spacing:-.01em;}
+  .brand .mark b{color:var(--terra);}
+  .brand .tag{font-size:1.25rem; color:var(--muted); font-style:italic; font-family:var(--serif); margin-top:2px;}
+  .brand .stk{font-size:1.15rem; color:var(--faint); margin-top:10px; letter-spacing:.02em;}
+  nav{padding:18px 16px;}
+  nav .grp{font-size:1.05rem; text-transform:uppercase; letter-spacing:.14em; color:var(--faint);
+    font-weight:600; margin:20px 12px 7px;}
+  nav a{display:block; color:var(--muted); padding:5px 14px; font-size:1.42rem; border:0; border-left:2px solid transparent; line-height:1.4;}
+  nav a:hover{color:var(--navy); background:transparent;}
+  nav a.active{color:var(--navy); font-weight:600; border-left-color:var(--terra);}
+
+  .topctl{display:flex; justify-content:flex-end; margin-bottom:30px;}
+  .qbtn{background:none; border:0; border-bottom:1px dashed var(--line); color:var(--muted); cursor:pointer;
+    font-family:var(--sans); font-size:1.28rem; padding:2px 2px 3px; letter-spacing:.01em;}
+  .qbtn:hover{color:var(--terra);}
+
+  .eyebrow{text-transform:uppercase; letter-spacing:.18em; font-size:1.12rem; font-weight:600;
+    color:var(--terra); margin:0 0 4px;}
+  h1.title{font-family:var(--serif); font-weight:500; font-size:4.3rem; line-height:1.08; letter-spacing:-.015em;
+    margin:0 0 14px; color:var(--navy);}
+  h2.sec{font-family:var(--serif); font-weight:500; font-size:3rem; letter-spacing:-.01em; color:var(--navy);
+    margin:64px 0 4px; padding-top:12px;}
+  h3{font-family:var(--sans); font-weight:600; font-size:2rem; letter-spacing:-.01em; margin:36px 0 6px; color:var(--navy);}
+  h4{font-weight:600; font-size:1.6rem; margin:24px 0 4px; color:var(--ink);}
+  .lead{font-size:1.92rem; line-height:1.5; color:var(--ink); font-weight:300; max-width:64ch;}
+  p{max-width:70ch;}
+  .muted{color:var(--muted);}
+  hr.rule{border:0; border-top:1px solid var(--line); margin:52px 0;}
+  ul,ol{padding-left:20px;} li{margin:4px 0;}
+  ::selection{background:#efd9a6;}
+
+  dl.facts{display:grid; grid-template-columns:auto 1fr; gap:2px 26px; margin:26px 0; font-size:1.5rem;}
+  dl.facts dt{color:var(--faint); text-transform:uppercase; font-size:1.12rem; letter-spacing:.1em; font-weight:600; padding-top:7px;}
+  dl.facts dd{margin:0; padding:6px 0; border-bottom:1px solid var(--line-2);}
+  dl.facts dt{border-bottom:1px solid var(--line-2);}
+
+  .tags{display:flex; gap:8px; flex-wrap:wrap; margin:22px 0;}
+  .tags span{font-size:1.2rem; border:1px solid var(--line); border-radius:20px; padding:2px 12px; color:var(--muted);}
+
+  .note{border-left:3px solid var(--navy); background:var(--paper-2); padding:12px 18px; margin:20px 0; border-radius:0 6px 6px 0;}
+  .note.warn{border-left-color:var(--rose);}
+  .note.tip{border-left-color:var(--sage);}
+  .note .lab{display:block; text-transform:uppercase; letter-spacing:.14em; font-size:1.05rem; font-weight:600; color:var(--navy); margin-bottom:4px;}
+  .note.warn .lab{color:var(--rose);} .note.tip .lab{color:var(--sage);}
+  .note p{margin:0;}
+
+  .expert{border-left:3px solid var(--terra); background:var(--paper-2); padding:12px 18px; margin:20px 0; border-radius:0 6px 6px 0;}
+  .expert .lab{display:block; text-transform:uppercase; letter-spacing:.14em; font-size:1.05rem; font-weight:600; color:var(--terra); margin-bottom:4px;}
+  .expert p{margin:0;}
+  html.hide-expert .expert{display:none;}
+
+  .code{margin:20px 0; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--code-bg);}
+  .code .bar{display:flex; justify-content:space-between; align-items:center; padding:7px 14px; background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.07);}
+  .code .lang{font-family:var(--mono); font-size:1.1rem; color:#8fb7b0; text-transform:lowercase; letter-spacing:.04em;}
+  .code .copy{background:none; border:0; color:#8fb7b0; font-family:var(--sans); font-size:1.15rem; cursor:pointer; padding:2px 6px; border-radius:4px;}
+  .code .copy:hover{background:rgba(255,255,255,.08); color:#fff;}
+  .code pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:1.3rem; line-height:1.62; color:var(--code-ink);}
+  .tk{color:#7fd0c8;} .ts{color:#e0c46b;} .tc{color:#7f9a96; font-style:italic;} .tn{color:#e0a06b;} .ty{color:#8fb7e0;} .ta{color:#c9a2e0;}
+  code.in{font-family:var(--mono); font-size:.9em; background:var(--inset); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--navy);}
+
+  table{width:100%; border-collapse:collapse; margin:18px 0; font-size:1.4rem;}
+  th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line-2); vertical-align:top;}
+  th{color:var(--faint); text-transform:uppercase; font-size:1.1rem; letter-spacing:.1em; font-weight:600; border-bottom-color:var(--line);}
+  tr:hover td{background:var(--paper-2);}
+
+  .tabs{display:flex; gap:22px; border-bottom:1px solid var(--line); margin:20px 0 0;}
+  .tabs button{background:none; border:0; border-bottom:2px solid transparent; color:var(--muted); padding:8px 0; cursor:pointer; font-size:1.42rem; font-family:var(--sans); font-weight:500;}
+  .tabs button.active{color:var(--navy); border-bottom-color:var(--terra);}
+  .tabpane{display:none;} .tabpane.active{display:block;}
+
+  .m{font-family:var(--mono); font-size:1.08rem; font-weight:600; letter-spacing:.04em; width:54px; display:inline-block;}
+  .m.get{color:#2f6fb0;} .m.post{color:#4a7d46;} .m.put{color:#b07d1f;} .m.patch{color:#8a5ea3;} .m.delete{color:#b14a3c;}
+  .auth{font-size:1.12rem; color:var(--muted); letter-spacing:.02em;}
+  .auth.admin{color:var(--rose);} .auth.customer{color:var(--sage);} .auth.provider{color:var(--terra);} .auth.public{color:var(--faint);}
+
+  .controls{margin:18px 0 4px;}
+  #ep-search{width:100%; background:var(--surface); border:1px solid var(--line); color:var(--ink);
+    padding:11px 14px; border-radius:6px; font-size:1.4rem;}
+  #ep-search:focus{outline:none; border-color:var(--terra-soft);}
+  .chips{display:flex; gap:16px; flex-wrap:wrap; margin:16px 0 4px;}
+  .chip{font-size:1.2rem; border:1px solid var(--line); border-radius:20px; padding:3px 13px; color:var(--muted); cursor:pointer;}
+  .chip:hover{border-color:var(--terra-soft); color:var(--navy);}
+  .chip.active{background:var(--terra); border-color:var(--terra); color:#fff;}
+  .ep-count{color:var(--faint); font-size:1.25rem; margin:12px 0 2px;}
+  .ep{border-bottom:1px solid var(--line-2);}
+  .ep-head{display:flex; gap:14px; align-items:baseline; padding:9px 4px; cursor:pointer; border-radius:5px;}
+  .ep-head:hover{background:var(--paper-2);}
+  .ep-route{font-family:var(--mono); font-size:1.32rem; color:var(--ink); flex:1; word-break:break-all;}
+  .ep-title{font-size:1.3rem; color:var(--muted);}
+  .ep-body{display:none; padding:2px 4px 14px 68px; font-size:1.35rem; color:var(--muted);}
+  .ep.open .ep-body{display:block;}
+  .ep-body p{margin:4px 0 0;}
+  .ep-tag{display:inline-block; font-size:1.05rem; border:1px solid var(--line); border-radius:12px; padding:0 9px; margin:8px 6px 0 0; color:var(--faint); text-transform:uppercase; letter-spacing:.07em;}
+  @media (max-width:1000px){ .ep-body{padding-left:4px;} }
+
+  .arch{width:100%; height:auto; margin:22px 0;}
+  .arch .box{fill:var(--surface); stroke:var(--line); stroke-width:1.5;}
+  .arch .box.host{stroke:#0b6e6e;} .arch .box.wasm{stroke:var(--terra-soft);}
+  .arch .box.api{stroke:#b8893f;} .arch .box.browser{stroke:#9c6b8a;}
+  .arch .t-title{fill:var(--navy); font-family:var(--sans); font-weight:600; font-size:13px;}
+  .arch .t-sub{fill:var(--muted); font-family:var(--sans); font-size:10.5px;}
+  .arch .arrow{stroke:#c9bd9c; stroke-width:1.5; fill:none; marker-end:url(#ah);}
+  .arch .arrow.dashed{stroke-dasharray:5 4;}
+  .arch .lbl{fill:var(--faint); font-family:var(--sans); font-size:10px;}
+
+  details.faq{border-bottom:1px solid var(--line-2);}
+  details.faq summary{padding:13px 2px; cursor:pointer; font-weight:500; list-style:none; color:var(--navy);}
+  details.faq summary::-webkit-details-marker{display:none;}
+  details.faq summary::before{content:"+"; color:var(--terra); margin-right:12px; font-weight:600;}
+  details.faq[open] summary::before{content:"\2013";}
+  details.faq .b{padding:0 2px 14px 26px; color:var(--muted); max-width:70ch;}
+
+  .colophon{margin-top:72px; padding-top:26px; border-top:1px solid var(--line); color:var(--faint); font-size:1.28rem;}
+  kbd{background:var(--inset); border:1px solid var(--line); border-radius:3px; padding:1px 6px; font-family:var(--mono); font-size:1.15rem;}
+  @media (max-width:780px){
+    .shell{grid-template-columns:1fr;} aside{position:static; height:auto;}
+    main{padding:36px 22px 90px;} h1.title{font-size:3.4rem;} .lead{font-size:1.7rem;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand">
+      <div class="mark">Sanaee<b>.</b></div>
+      <div class="tag">the operator's console for home services</div>
+      <div class="stk">Blazor · .NET 10 · MudBlazor · WASM</div>
+    </div>
+    <nav id="nav">
+      <div class="grp">Get oriented</div>
+      <a href="#overview">Overview</a>
+      <a href="#tldr">At a glance</a>
+      <a href="#quickstart">Quick start</a>
+      <a href="#stack">Technology stack</a>
+      <div class="grp">Architecture</div>
+      <a href="#hosting">Solution &amp; hosting</a>
+      <a href="#rendering">Rendering model</a>
+      <a href="#layout">Project layout</a>
+      <a href="#program">Composition roots</a>
+      <div class="grp">Core concepts</div>
+      <a href="#bridge">The API bridge</a>
+      <a href="#data">Data service layer</a>
+      <a href="#modes">Demo vs Live</a>
+      <a href="#mapping">Mapping &amp; aggregation</a>
+      <a href="#theme">Design tokens</a>
+      <a href="#shell">Shell &amp; navigation</a>
+      <div class="grp">Deep dives</div>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#tables">Tables &amp; states</a>
+      <a href="#dialogs">Dialogs &amp; actions</a>
+      <a href="#chat">Messaging</a>
+      <div class="grp">Reference</div>
+      <a href="#routes">Route map</a>
+      <a href="#issues">Known quirks</a>
+      <a href="#build">Build &amp; run</a>
+      <a href="#glossary">Glossary</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="topctl">
+      <button class="qbtn" id="themeToggle">Dark mode</button>
+      <button class="qbtn" id="expertToggle" style="margin-left:14px">Hide expert notes</button>
+    </div>
+
+    <!-- OVERVIEW -->
+    <section id="overview">
+      <p class="eyebrow">Frontend · added by this fork</p>
+      <h1 class="title">Sanaee Delivery — the Blazor console</h1>
+      <p class="lead">An operations console for the Sanaee home-services marketplace: customers post jobs, providers bid,
+        admins shepherd the work, money moves through wallets. This document reads the
+        <code class="in">SanaeeUI/</code> solution end-to-end — the shell, the data layer, the API bridge, the theme and all
+        21 pages.</p>
+
+      <dl class="facts">
+        <dt>Runtime</dt><dd>.NET 10 · Blazor Web App (InteractiveAuto: Server + WebAssembly)</dd>
+        <dt>UI kit</dt><dd>MudBlazor 9 · token-driven Egyptian theme (teal + gold)</dd>
+        <dt>Shape</dt><dd>Two projects: a server host and a WASM client sharing one service graph</dd>
+        <dt>Backend</dt><dd>The original <code class="in">src/</code> API on <code class="in">:5270</code>, reached through a same-origin reverse proxy</dd>
+        <dt>Surface</dt><dd>21 routes · 1 data façade · 2 modes (Demo / Live) · ~16 shared components</dd>
+      </dl>
+
+      <div class="tags">
+        <span>Blazor Web App</span><span>InteractiveAuto</span><span>WebAssembly</span><span>MudBlazor</span>
+        <span>BFF reverse proxy</span><span>Token theme</span><span>Demo/Live switch</span>
+      </div>
+
+      <div class="note tip"><span class="lab">Where this UI comes from</span>
+        <p>The original repository ships only the .NET backend (<code class="in">src/</code>). This fork adds an entirely new
+        solution, <code class="in">SanaeeUI/</code>, and leaves the original code intact apart from one required fix (a route
+        typo in the histories controller that otherwise crashes API startup). The UI talks to the API as-is.</p></div>
+
+      <div class="note warn"><span class="lab">The browser never calls the API directly</span>
+        <p>The Sanaee API has <strong>no CORS policy</strong> and <strong>no authentication</strong>. The WebAssembly client
+        therefore calls its own origin (<code class="in">/api/**</code>) and the server silently forwards those calls to the
+        API, server-to-server. Same-origin means CORS never applies; there is nothing to log into.</p></div>
+
+      <div class="note"><span class="lab">How to read this</span>
+        <p>Teal <em>Notes</em> flag behaviour and gotchas; gold <em>Expert notes</em> add implementation depth and can be
+        hidden top-right. All source paths are relative to the repo root.</p></div>
+    </section>
+
+    <!-- TLDR -->
+    <section id="tldr">
+      <p class="eyebrow">The two-minute version</p>
+      <h2 class="sec" style="margin-top:6px">At a glance</h2>
+      <p class="lead" style="font-size:1.74rem">Everything that matters, condensed. Each point links to the full detail.</p>
+      <ul style="list-style:none;padding-left:0">
+        <li style="margin:10px 0"><b>What it is.</b> An admin console over the Sanaee marketplace API — orders, offers, providers, KYC, finance. <a href="#overview">Overview</a></li>
+        <li style="margin:10px 0"><b>Stack.</b> .NET 10 Blazor Web App, MudBlazor 9, InteractiveAuto (Server first, WASM after). <a href="#stack">Stack</a></li>
+        <li style="margin:10px 0"><b>Shape.</b> A server host (<code class="in">SanaeeUI</code>) prerenders and proxies; a WASM client (<code class="in">SanaeeUI.Client</code>) runs interactively. One shared service graph. <a href="#hosting">Hosting</a></li>
+        <li style="margin:10px 0"><b>The bridge.</b> <code class="in">/api/{**path}</code> is reverse-proxied server-side to the real API, so the browser is always same-origin. <a href="#bridge">API bridge</a></li>
+        <li style="margin:10px 0"><b>One façade.</b> Pages inject <code class="in">ISanaeeDataService</code>; a router sends calls to Demo or Live based on a toggle. <a href="#data">Data layer</a></li>
+        <li style="margin:10px 0"><b>Mapping.</b> Wire DTOs (<code class="in">ApiDtos</code>) → flattened UI models; per-entity endpoints are aggregated by iterating parent ids. <a href="#mapping">Mapping</a></li>
+        <li style="margin:10px 0"><b>Theme.</b> Every colour lives in <code class="in">SanaeeBrand</code>, becomes a Mud theme and CSS variables. No hex outside the tokens. <a href="#theme">Tokens</a></li>
+        <li style="margin:10px 0"><b>The pattern.</b> Every list page is Breadcrumbs → Header → KPIs → FilterBar → Table, with loading/empty/error states. <a href="#tables">Tables</a></li>
+        <li style="margin:10px 0"><b>Watch out.</b> The offers list DTO has no id; availability toggles ignore the requested value; audit has no endpoint. <a href="#issues">Quirks</a></li>
+      </ul>
+    </section>
+
+    <!-- QUICK START -->
+    <section id="quickstart">
+      <h2 class="sec">Quick start</h2>
+      <p>You need the <strong>.NET 10 SDK</strong>. The UI runs happily in <em>Demo</em> mode with no backend at all; for
+        <em>Live</em> mode start the API first (see the backend document).</p>
+      <div class="code" data-lang="bash"><div class="bar"><span class="lang">bash</span><button class="copy">Copy</button></div><pre>
+# terminal 2 — the UI (demo works on its own)
+dotnet build "SanaeeUI/SanaeeUI.sln"
+dotnet run   --project "SanaeeUI/SanaeeUI" --launch-profile http
+# → UI listens on http://localhost:5105
+
+# for Live mode, start the API in another terminal (default SanaeeApi:BaseUrl)
+dotnet run   --project "src/Presentation/API" --launch-profile http
+# → API listens on http://localhost:5270</pre></div>
+      <div class="note"><span class="lab">It opens in Demo mode</span>
+        <p>The app boots with the in-memory dataset so every page renders immediately. Use the
+        <em>Connect to API</em> button in the top bar to flip to Live; the chip beside it shows which source is active.</p></div>
+      <div class="note tip"><span class="lab">Pointing at a different API</span>
+        <p>The base URL is the single key <code class="in">SanaeeApi:BaseUrl</code>, present in both
+        <code class="in">SanaeeUI/appsettings.json</code> and <code class="in">SanaeeUI.Client/wwwroot/appsettings.json</code>.
+        Edit it (or override with an env var) to target another host.</p></div>
+    </section>
+
+    <!-- STACK -->
+    <section id="stack">
+      <h2 class="sec">Technology stack</h2>
+      <table>
+        <thead><tr><th>Concern</th><th>Choice</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Runtime</td><td>.NET 10</td><td>Both projects target <code class="in">net10.0</code>.</td></tr>
+          <tr><td>App model</td><td>Blazor Web App</td><td>Server host + WASM client, <code class="in">InteractiveAuto</code>.</td></tr>
+          <tr><td>UI kit</td><td>MudBlazor 9</td><td>Theme provider, drawer, table, dialogs, charts, snackbars.</td></tr>
+          <tr><td>HTTP</td><td>System.Net.Http + System.Text.Json</td><td>camelCase + string-enum converter; flat description.</td></tr>
+          <tr><td>Proxy</td><td>Custom <code class="in">MapMethods</code> endpoint</td><td><code class="in">/api/{**path}</code> → API base URL.</td></tr>
+          <tr><td>State</td><td><code class="in">AppState</code> singleton</td><td>Mode + change event; no Redux-style store.</td></tr>
+          <tr><td>Styling</td><td>CSS variables from C#</td><td><code class="in">SanaeeBrand</code> → <code class="in">--sanaee-*</code> + <code class="in">sanaee.css</code>.</td></tr>
+          <tr><td>Auth</td><td class="auth public">none</td><td>The API has none either; the console is trusted-network-only.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr class="rule">
+
+    <!-- HOSTING -->
+    <section id="hosting">
+      <p class="eyebrow">Architecture</p>
+      <h2 class="sec" style="margin-top:6px">One solution, two projects</h2>
+      <p><code class="in">SanaeeUI.sln</code> contains a <strong>server host</strong> and a <strong>WebAssembly client</strong>.
+        The host references the client assembly and adds it as an additional routing assembly, so a single URL space serves
+        both. On the first visit the page is rendered and made interactive on the server; on later visits the same components
+        run in the browser as WebAssembly.</p>
+
+      <svg class="arch" viewBox="0 0 760 320" role="img" aria-label="Hosting model">
+        <defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+          <path d="M0,0 L9,4.5 L0,9 Z" fill="#c9bd9c"/></marker></defs>
+        <rect class="box browser" x="18" y="120" width="150" height="80" rx="6"/>
+        <text class="t-title" x="34" y="150">Browser</text>
+        <text class="t-sub" x="34" y="170">:5105 · same-origin</text>
+        <text class="t-sub" x="34" y="186">/api/** calls</text>
+
+        <rect class="box host" x="238" y="24" width="486" height="120" rx="6"/>
+        <text class="t-title" x="254" y="50">SanaeeUI — server host (Kestrel, :5105)</text>
+        <text class="t-sub" x="254" y="72">prerender + InteractiveServer · MapRazorComponents&lt;App&gt;</text>
+        <text class="t-sub" x="254" y="90">AddInteractiveWebAssemblyRenderMode · MapStaticAssets</text>
+        <text class="t-sub" x="254" y="108">MapSanaeeApiProxy → /api/{**path}</text>
+        <text class="t-sub" x="254" y="126">server-side SanaeeApiClient → talks to the API directly</text>
+
+        <rect class="box wasm" x="238" y="196" width="300" height="84" rx="6"/>
+        <text class="t-title" x="254" y="224">SanaeeUI.Client — WebAssembly</text>
+        <text class="t-sub" x="254" y="244">same Razor components + service graph</text>
+        <text class="t-sub" x="254" y="260">HttpClient base = own origin → proxy</text>
+
+        <rect class="box api" x="600" y="196" width="142" height="84" rx="6"/>
+        <text class="t-title" x="616" y="224">Sanaee API</text>
+        <text class="t-sub" x="616" y="244">:5270 · original src/</text>
+        <text class="t-sub" x="616" y="260">no CORS · no auth</text>
+
+        <path class="arrow" d="M168,140 C200,140 208,86 238,86"/>
+        <text class="lbl" x="170" y="128">loads</text>
+        <path class="arrow" d="M168,180 C200,200 208,224 238,224"/>
+        <text class="lbl" x="170" y="212">boots WASM</text>
+        <path class="arrow" d="M538,238 L600,238"/>
+        <text class="lbl" x="546" y="230">proxy /api</text>
+        <path class="arrow dashed" d="M600,120 C520,120 500,200 538,220"/>
+        <text class="lbl" x="470" y="150">server-to-server</text>
+      </svg>
+
+      <h4>SanaeeUI — the host <span class="muted">— <code class="in">SanaeeUI/SanaeeUI</code></span></h4>
+      <p class="muted">A <code class="in">Microsoft.NET.Sdk.Web</code> project. It owns MudBlazor, the reverse proxy, the
+        shared data services, and Razor Components with both interactive render modes. It references the client project.</p>
+      <h4>SanaeeUI.Client — the app <span class="muted">— <code class="in">SanaeeUI/SanaeeUI.Client</code></span></h4>
+      <p class="muted">A <code class="in">Microsoft.NET.Sdk.BlazorWebAssembly</code> project. It holds all 21 pages, the models,
+        the service layer and the theme. It is the majority of the code and is shared with the server at prerender time.</p>
+
+      <div class="expert"><span class="lab">Expert note — one graph, two hosts</span>
+        <p>Both startup files call the same <code class="in">AddSanaeeUiServices(...)</code> extension. The only difference is
+        the base address handed to <code class="in">HttpClient</code>: the server passes the API URL directly; the WASM client
+        passes <code class="in">NavigationManager.BaseUri</code>, i.e. its own origin. That single substitution is what routes
+        WASM traffic through the proxy and server traffic straight to the API.</p></div>
+    </section>
+
+    <!-- RENDERING -->
+    <section id="rendering">
+      <h3>Rendering model</h3>
+      <p>Every page declares <code class="in">@rendermode InteractiveAuto</code>. Blazor picks the best host automatically:
+        the first page load is prerendered on the server and made interactive over a SignalR circuit; once the WASM bundle
+        has downloaded, subsequent navigations run fully in the browser.</p>
+      <div class="code" data-lang="text"><div class="bar"><span class="lang">text — one page's header</span><button class="copy">Copy</button></div><pre>
+@page "/orders"
+@rendermode InteractiveAuto
+@inject ISanaeeDataService Data</pre></div>
+      <table>
+        <thead><tr><th>Phase</th><th>Where code runs</th><th>HttpClient base</th><th>Sees</th></tr></thead>
+        <tbody>
+          <tr><td>Prerender (SSR)</td><td>Server</td><td>API directly</td><td>Live data if mode is Live</td></tr>
+          <tr><td>Interactive server</td><td>Server (circuit)</td><td>API directly</td><td>Same-origin from browser's view</td></tr>
+          <tr><td>Interactive WASM</td><td>Browser</td><td>Own origin → proxy</td><td>CORS-free via the host</td></tr>
+        </tbody>
+      </table>
+      <div class="note tip"><span class="lab">Why InteractiveAuto</span>
+        <p>It gives a fast first paint (server-rendered HTML, no download wait) while moving to the client for responsiveness,
+        and it costs nothing to opt in here because the service graph is identical on both sides.</p></div>
+    </section>
+
+    <!-- LAYOUT -->
+    <section id="layout">
+      <h3>Project layout</h3>
+      <div class="code" data-lang="text"><div class="bar"><span class="lang">text</span><button class="copy">Copy</button></div><pre>
+SanaeeUI/
+├─ SanaeeUI.sln
+├─ docs/                              DESIGN-SYSTEM · PAGES · ROADMAP
+├─ SanaeeUI/                          HOST (Microsoft.NET.Sdk.Web)
+│  ├─ Program.cs                      composition root + proxy registration
+│  ├─ appsettings.json                SanaeeApi:BaseUrl
+│  ├─ Properties/launchSettings.json  http :5105
+│  ├─ Components/
+│  │  ├─ App.razor                    &lt;html&gt;: fonts, styles, blazor.web.js
+│  │  ├─ Routes.razor                 Router + DefaultLayout
+│  │  ├─ Layout/                      MainLayout · NavMenu · Breadcrumbs · ReconnectModal
+│  │  └─ Pages/                       Error · NotFound (shell 404)
+│  ├─ Services/
+│  │  └─ SanaeeApiProxyExtensions.cs  /api/{**path} reverse proxy
+│  └─ wwwroot/
+│     ├─ sanaee.css                   all component styling (var(--sanaee-*))
+│     └─ favicon.ico
+└─ SanaeeUI.Client/                   APP (BlazorWebAssembly)
+   ├─ Program.cs                      WASM entry; same services, own origin
+   ├─ _Imports.razor
+   ├─ Models/                         Dtos.cs (UI models) · Enums.cs
+   ├─ Theme/                          SanaeeBrand.cs · SanaeeTheme.cs
+   ├─ Services/
+   │  ├─ ISanaeeDataService.cs        the façade
+   │  ├─ SanaeeDataServiceRouter.cs   Demo/Live switch
+   │  ├─ DemoDataService.cs           in-memory dataset
+   │  ├─ SanaeeApiClient.cs           live HTTP client
+   │  ├─ DemoData.cs · AppState.cs
+   │  ├─ ServiceCollectionExtensions.cs
+   │  └─ Api/ApiDtos.cs               wire DTOs
+   ├─ Shared/                         ~16 components + StatusFormat
+   ├─ Pages/                          21 routed pages
+   └─ wwwroot/appsettings.json        SanaeeApi:BaseUrl (WASM copy)</pre></div>
+    </section>
+
+    <!-- PROGRAM -->
+    <section id="program">
+      <h3>Composition roots</h3>
+      <p>The host wires MudBlazor, the proxy, the shared services and both render modes; then maps the proxy before the
+        Blazor endpoints.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — SanaeeUI/Program.cs (abridged)</span><button class="copy">Copy</button></div><pre>
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddMudServices();
+
+var apiBaseUrl = builder.Configuration["SanaeeApi:BaseUrl"] ?? "http://localhost:5270/";
+if (!apiBaseUrl.EndsWith('/')) apiBaseUrl += "/";
+
+// Named client used by the proxy to reach the API server-to-server.
+builder.Services.AddHttpClient(SanaeeApiProxyClient.Name, c =&gt; c.BaseAddress = new Uri(apiBaseUrl));
+
+// The same data services the WASM client uses; on the server they call the API directly.
+builder.Services.AddSanaeeUiServices(apiBaseUrl);
+
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents()
+    .AddInteractiveWebAssemblyComponents();
+
+var app = builder.Build();
+if (app.Environment.IsDevelopment()) app.UseWebAssemblyDebugging();
+app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseHttpsRedirection();
+app.UseAntiforgery();
+app.MapStaticAssets();
+
+app.MapSanaeeApiProxy();                                     // /api/** → real API
+
+app.MapRazorComponents&lt;App&gt;()
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(SanaeeUI.Client._Imports).Assembly);
+app.Run();</pre></div>
+      <p>The WASM client's root is deliberately tiny — it registers the same services, then hands its own base URI to the
+        client.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — SanaeeUI.Client/Program.cs</span><button class="copy">Copy</button></div><pre>
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.Services.AddMudServices();
+
+// Own origin → the request is handled by the server's reverse proxy (no CORS).
+builder.Services.AddSanaeeUiServices(sp =&gt;
+    new Uri(sp.GetRequiredService&lt;NavigationManager&gt;().BaseUri));
+
+await builder.Build().RunAsync();</pre></div>
+      <div class="expert"><span class="lab">Expert note — one registration extension</span>
+        <p><code class="in">AddSanaeeUiServices</code> registers the singleton <code class="in">HttpClient</code>,
+        <code class="in">DemoDataService</code>, <code class="in">SanaeeApiClient</code>, <code class="in">AppState</code> and maps
+        <code class="in">ISanaeeDataService</code> → <code class="in">SanaeeDataServiceRouter</code>. Keeping this in the client
+        project is what lets both hosts share it verbatim.</p></div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- BRIDGE -->
+    <section id="bridge">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">The API bridge (BFF proxy)</h2>
+      <p>Because the API sends no CORS headers, a browser cannot call it directly. The host solves this by mapping
+        <code class="in">/api/{**path}</code> and forwarding each request to <code class="in">SanaeeApi:BaseUrl</code>. From the
+        browser's point of view, the API is same-origin.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — SanaeeApiProxyExtensions (abridged)</span><button class="copy">Copy</button></div><pre>
+private static readonly string[] Methods =
+    { "GET","POST","PUT","PATCH","DELETE","HEAD","OPTIONS" };
+
+app.MapMethods("/api/{**path}", Methods, HandleAsync);
+
+// Forward method, headers, body and query to the API, then stream the response back.
+var target = new Uri(client.BaseAddress, "api/" + path + context.Request.QueryString);
+using var request = new HttpRequestMessage(new HttpMethod(context.Request.Method), target);
+// ...copy headers (skip Host / Content-Length), attach body for POST/PUT/PATCH…
+using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+context.Response.StatusCode = (int)response.StatusCode;
+await response.Content.CopyToAsync(context.Response.Body);</pre></div>
+      <div class="note"><span class="lab">Headers are mirrored both ways</span>
+        <p>Request headers (minus <code class="in">Host</code> and <code class="in">Content-Length</code>) are forwarded, and
+        both response header collections are copied back. The <code class="in">transfer-encoding</code> header is stripped so
+        Kestrel can chunk the response itself.</p></div>
+      <div class="note warn"><span class="lab">API down → a clean 502</span>
+        <p>If the API is not running, the proxy catches the <code class="in">HttpRequestException</code> and returns
+        <code class="in">502</code> with a JSON body <code class="in">{ error, detail }</code>. The client's methods fail
+        gracefully and surface <code class="in">LastError</code> rather than throwing, so pages degrade instead of crashing.</p></div>
+    </section>
+
+    <!-- DATA -->
+    <section id="data">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">The data service layer</h2>
+      <p>Pages never touch HTTP. They inject one interface, <code class="in">ISanaeeDataService</code>, which exposes every
+        read and mutation the UI needs. Two implementations sit behind it and a router picks between them.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — the façade (abridged)</span><button class="copy">Copy</button></div><pre>
+public interface ISanaeeDataService
+{
+    DataMode Mode { get; }
+    string? LastError { get; }
+
+    Task&lt;DashboardStats&gt; GetDashboardStatsAsync();
+    Task&lt;IReadOnlyList&lt;OrderListItem&gt;&gt; GetOrdersAsync();
+    Task&lt;IReadOnlyList&lt;OfferListItem&gt;&gt; GetOffersAsync();
+    Task&lt;IReadOnlyList&lt;ProviderListItem&gt;&gt; GetProvidersAsync();
+    // …one Get…Async per page…
+
+    Task&lt;CreateOrderRequest?&gt; CreateOrderAsync(CreateOrderRequest request);
+    Task&lt;CreateOfferRequest?&gt; CreateOfferAsync(CreateOfferRequest request);
+
+    Task AcceptOfferAsync(int offerId);
+    Task StartOrderAsync(int orderId);
+    Task CompleteOrderAsync(int orderId);
+    Task CancelOrderAsync(int orderId, string reason, UserType actor);
+    // …
+}</pre></div>
+      <h4>The router <span class="muted">— <code class="in">SanaeeDataServiceRouter</code></span></h4>
+      <p class="muted">It holds both services plus <code class="in">AppState</code> and forwards every call to whichever is
+        active. The UI never knows which backend it is talking to.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — SanaeeDataServiceRouter (the whole trick)</span><button class="copy">Copy</button></div><pre>
+private ISanaeeDataService Active =&gt;
+    _state.Mode == DataMode.Live ? _api : _demo;
+
+public Task&lt;IReadOnlyList&lt;OrderListItem&gt;&gt; GetOrdersAsync() =&gt; Active.GetOrdersAsync();
+// …every method is a one-line delegation…</pre></div>
+      <div class="expert"><span class="lab">Expert note — registrations are singletons</span>
+        <p>The whole graph is registered as singletons. That is fine for an admin console (a shared stats cache and a global
+        mode switch are desirable), but it means the WASM client keeps its <code class="in">HttpClient</code> alive for the
+        session's lifetime — no per-request scoping.</p></div>
+    </section>
+
+    <!-- MODES -->
+    <section id="modes">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Demo vs Live</h2>
+      <p>Two datasets, one UI. <code class="in">DemoDataService</code> serves a small, coherent in-memory world so the console
+        is fully explorable with nothing running. <code class="in">SanaeeApiClient</code> performs real HTTP against the API.
+        <code class="in">AppState</code> carries the current mode and raises a change event the shell listens to.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — AppState</span><button class="copy">Copy</button></div><pre>
+public class AppState
+{
+    public DataMode Mode { get; private set; } = DataMode.Demo;   // starts in Demo
+    public string ApiBaseUrl { get; set; } = "http://localhost:5270/";
+    public event Action? Changed;
+
+    public void SetMode(DataMode mode) { if (Mode == mode) return; Mode = mode; Changed?.Invoke(); }
+    public void ToggleMode() =&gt; SetMode(Mode == DataMode.Demo ? DataMode.Live : DataMode.Demo);
+}</pre></div>
+      <p>The top bar shows a chip (<em>Demo data</em> / <em>Live API</em>) and a button that toggles the mode. Because
+        <code class="in">MainLayout</code> subscribes to <code class="in">Changed</code>, flipping the switch re-renders the
+        shell immediately; page components re-query on their next render.</p>
+      <table>
+        <thead><tr><th></th><th>DemoDataService</th><th>SanaeeApiClient</th></tr></thead>
+        <tbody>
+          <tr><td>Source</td><td>In-memory <code class="in">DemoData</code></td><td>HTTP to the API (direct or proxied)</td></tr>
+          <tr><td>Needs backend</td><td>No</td><td>Yes</td></tr>
+          <tr><td><code class="in">LastError</code></td><td>Always null</td><td>Set on the last failure</td></tr>
+          <tr><td>Mutations</td><td>Simulated locally</td><td>Real PATCH/POST calls</td></tr>
+        </tbody>
+      </table>
+      <div class="note warn"><span class="lab">Mode is a UI toggle, not auth</span>
+        <p>Switching to Live does not authenticate or scope anything — it simply changes which <code class="in">ISanaeeDataService</code>
+        the router forwards to. Live mode against an unseeded or down API yields empty lists and a populated
+        <code class="in">LastError</code>.</p></div>
+    </section>
+
+    <!-- MAPPING -->
+    <section id="mapping">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Wire DTOs, mapping &amp; aggregation</h2>
+      <p>The API speaks in query DTOs; the UI wants flat rows. <code class="in">ApiDtos.cs</code> mirrors the wire shapes;
+        <code class="in">Models/Dtos.cs</code> holds the flattened view models; small static mappers convert one to the other.
+        JSON is camelCase with <strong>string enums</strong>, so a converter is registered and deserialization is
+        case-insensitive.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — the tolerant list reader</span><button class="copy">Copy</button></div><pre>
+private static readonly JsonSerializerOptions Json = new()
+{
+    PropertyNameCaseInsensitive = true,
+    Converters = { new JsonStringEnumConverter() }
+};
+
+private async Task&lt;List&lt;TApi&gt;&gt; GetRawListAsync&lt;TApi&gt;(string url)
+{
+    var response = await _http.GetAsync(url);
+    if (!response.IsSuccessStatusCode) { LastError = $"HTTP {(int)response.StatusCode} ({url})"; return new(); }
+
+    using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+    return doc.RootElement.ValueKind switch
+    {
+        JsonValueKind.Array  =&gt; doc.RootElement.Deserialize&lt;List&lt;TApi&gt;&gt;(Json)!,   // bare array
+        JsonValueKind.Object =&gt; /* PagedResult { items:[...] } or a single object */ …,
+        _ =&gt; new List&lt;TApi&gt;()
+    };
+}</pre></div>
+      <p>That one helper means the client is resilient to the API's three response shapes: a bare array, the
+        <code class="in">PagedResult</code> envelope (<code class="in">{ items: [...] }</code>), or a single object.</p>
+      <h4>Aggregation for per-entity endpoints</h4>
+      <p>Several entities are only exposed per parent — offers per order, documents per provider, reviews per reviewee,
+        messages per order, addresses/phones per user. To show them in a flat table the client fetches a page of parents and
+        fans out in parallel, then flattens:</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — offers are only exposed per order</span><button class="copy">Copy</button></div><pre>
+public async Task&lt;IReadOnlyList&lt;OfferListItem&gt;&gt; GetOffersAsync()
+{
+    var orderIds = (await GetOrdersAsync()).Select(o =&gt; o.Id).Where(id =&gt; id != 0)
+                                          .Take(AggregateCap).ToList();   // AggregateCap = 20
+    var dtos = await GetForParentsAsync&lt;GetAllOffersForOrderDto&gt;(
+        orderIds, id =&gt; $"api/Offers?OrderId={id}");
+    return dtos.Select(MapOffer).ToList();
+}</pre></div>
+      <table>
+        <thead><tr><th>UI table</th><th>Aggregated from</th><th>Parent source</th></tr></thead>
+        <tbody>
+          <tr><td>Offers</td><td><code class="in">/api/Offers?OrderId=</code></td><td>orders</td></tr>
+          <tr><td>Documents</td><td><code class="in">api/ProviderDocuments?id=</code></td><td>providers</td></tr>
+          <tr><td>Provider Skills</td><td><code class="in">api/Providers/admin/{id}</code> → Categories</td><td>providers</td></tr>
+          <tr><td>Reviews</td><td><code class="in">api/Reviewes?RevieweeId=</code></td><td>providers + customers</td></tr>
+          <tr><td>Messages</td><td><code class="in">api/Messages?OrderId=</code></td><td>orders</td></tr>
+          <tr><td>Addresses</td><td><code class="in">api/Addresses/{id}</code></td><td>customers</td></tr>
+          <tr><td>Phones</td><td><code class="in">api/UserPhones/{id}</code></td><td>customers</td></tr>
+        </tbody>
+      </table>
+      <div class="note warn"><span class="lab">The page-size ceiling</span>
+        <p>The API validates <code class="in">pageSize</code> to a maximum of <strong>100</strong>. The client sets
+        <code class="in">PageSizeAll = 100</code> for its "all" reads; asking for more returns a 400 validation error.
+        Combined with <code class="in">AggregateCap = 20</code>, the console shows up to 100 rows per list and up to 20 parents'
+        worth of aggregated rows.</p></div>
+      <div class="expert"><span class="lab">Expert note — mapping quirks inherited from the API</span>
+        <p>Some mappers have to paper over API gaps: <code class="in">GetAllOffersForOrderDto</code> carries no
+        <code class="in">OfferId</code> (the UI sets it to 0), and the messages DTO omits the order id, so the mapper injects the
+        parent id it already knows. These are documented under <a href="#issues">Known quirks</a>.</p></div>
+    </section>
+
+    <!-- THEME -->
+    <section id="theme">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Design tokens &amp; theme</h2>
+      <p>The whole look &amp; feel is driven by one flat token set. <code class="in">SanaeeBrand</code> declares the colours for
+        light and dark plus shape constants; <code class="in">SanaeeTheme</code> turns them into (a) a MudBlazor
+        <code class="in">MudTheme</code> and (b) CSS custom properties. <strong>No colour is hard-coded anywhere else.</strong></p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — SanaeeBrand (light, abridged)</span><button class="copy">Copy</button></div><pre>
+public static class SanaeeBrand
+{
+    public const string FontFamily   = "Roboto, 'Segoe UI', system-ui, sans-serif";
+    public const string BorderRadius = "12px";
+    public const string CardRadius   = "16px";
+    public const string Name         = "Egyptian Nile";
+
+    public static readonly SanaeeColorSet Light = new()
+    {
+        Primary = "#0B6E6E",   // Nile teal
+        Secondary = "#C9A227", // Antique gold
+        Tertiary = "#1E5FA8",  // Lapis
+        Background = "#F5F0E6",// Warm sand
+        Surface = "#FFFFFF",
+        // …On* / Text* / Border / semantic colours…
+    };
+    public static readonly SanaeeColorSet Dark = new() { /* … */ };
+}</pre></div>
+      <p>The theme emits the tokens as <code class="in">--sanaee-*</code> variables, which <code class="in">MainLayout</code>
+        renders inline for the active mode. <code class="in">sanaee.css</code> and every component then reference only these
+        variables.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — SanaeeTheme.CssVariables (abridged)</span><button class="copy">Copy</button></div><pre>
+public static string CssVariables(SanaeeColorSet c) =&gt; $$"""
+    :root {
+        --sanaee-primary: {{c.Primary}};
+        --sanaee-secondary: {{c.Secondary}};
+        --sanaee-bg: {{c.Background}};
+        --sanaee-surface: {{c.Surface}};
+        --sanaee-appbar: {{c.Appbar}};
+        --sanaee-text: {{c.TextPrimary}};
+        --sanaee-border: {{c.Border}};
+        --sanaee-radius: {{SanaeeBrand.BorderRadius}};
+        --sanaee-card-radius: {{SanaeeBrand.CardRadius}};
+        /* … */
+    }
+    """;</pre></div>
+      <table>
+        <thead><tr><th>Token</th><th>Light</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>Primary</td><td><code class="in">#0B6E6E</code></td><td>Nile teal — actions, active nav, brand.</td></tr>
+          <tr><td>Secondary</td><td><code class="in">#C9A227</code></td><td>Antique gold — accents only (hero trim, stars).</td></tr>
+          <tr><td>Tertiary</td><td><code class="in">#1E5FA8</code></td><td>Lapis — informational accents.</td></tr>
+          <tr><td>Background</td><td><code class="in">#F5F0E6</code></td><td>Warm sand page background.</td></tr>
+          <tr><td>Appbar</td><td><code class="in">#0B6E6E</code></td><td>Top bar with a gold hairline underneath.</td></tr>
+        </tbody>
+      </table>
+      <div class="note tip"><span class="lab">Re-skin in one file</span>
+        <p>To change the entire identity, edit <code class="in">Light</code> and <code class="in">Dark</code> in
+        <code class="in">SanaeeBrand.cs</code>. Both the Mud theme and the CSS variables derive from those values, so the shell,
+        pages and components all follow.</p></div>
+      <div class="expert"><span class="lab">Expert note — theme switching at runtime</span>
+        <p>Dark mode is a boolean on <code class="in">MainLayout</code>. It feeds <code class="in">IsDarkMode</code> to
+        <code class="in">MudThemeProvider</code> and recomputes <code class="in">_cssVariables</code>, so the Mud palette and the
+        raw CSS variables switch together in the same render.</p></div>
+    </section>
+
+    <!-- SHELL -->
+    <section id="shell">
+      <p class="eyebrow">Core concept</p>
+      <h2 class="sec" style="margin-top:6px">Shell &amp; navigation</h2>
+      <p><code class="in">MainLayout</code> is the chrome every page sits inside: an app bar, a 272&nbsp;px drawer with grouped
+        navigation, breadcrumbs, and a status-code 404.</p>
+      <h4>App bar</h4>
+      <ul>
+        <li>Brand mark and a <em>Demo / Live</em> chip + toggle button.</li>
+        <li>Global search — pressing <kbd>Enter</kbd> navigates to <code class="in">/orders?q=…</code>.</li>
+        <li>Notifications menu (static sample items) and a light/dark toggle.</li>
+        <li>Profile avatar menu (Profile / Settings / Sign out — presentational).</li>
+      </ul>
+      <h4>Drawer &amp; groups</h4>
+      <p>Seven groups, each a <code class="in">MudNavGroup</code>: Marketplace, People, KYC &amp; Trust, Catalog, Finance,
+        Operations, System. Active links are tinted with the primary colour.</p>
+      <div class="code" data-lang="text"><div class="bar"><span class="lang">text — navigation groups</span><button class="copy">Copy</button></div><pre>
+Marketplace    Orders · Offers · Messages
+People         Customers · Providers · Users
+KYC & Trust    Provider Documents · Applications · Provider Status · Reviews
+Catalog        Categories · Provider Skills · Cancellation Reasons
+Finance        Wallets · Transactions · Payments
+Operations     Order Timeline · Addresses · Phones
+System         Audit Logs</pre></div>
+      <h4>Breadcrumbs</h4>
+      <p class="muted"><code class="in">Breadcrumbs.razor</code> reads the current route, looks each segment up in a label map,
+        and builds links. It renders nothing on the dashboard (root).</p>
+      <div class="note"><span class="lab">Not-found handling</span>
+        <p>The host re-executes 404s to <code class="in">/not-found</code>
+        (<code class="in">UseStatusCodePagesWithReExecute</code>), which renders the client's <code class="in">NotFound</code>
+        page. There is also a <code class="in">ReconnectModal</code> that appears when the interactive circuit drops.</p></div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- DASHBOARD -->
+    <section id="dashboard">
+      <p class="eyebrow">Deep dive</p>
+      <h2 class="sec" style="margin-top:6px">Dashboard</h2>
+      <p>The root page pulls one aggregate — <code class="in">GetDashboardStatsAsync()</code> — and lays out a hero, eight KPI
+        tiles and four charts. While the call is in flight it shows a skeleton grid.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — SanaeeApiClient.GetDashboardStatsAsync (abridged)</span><button class="copy">Copy</button></div><pre>
+var orders    = await GetOrdersAsync();
+var providers = await GetProvidersAsync();
+var documents = await GetDocumentsAsync();
+var customers = await GetCustomersAsync();
+var payments  = await GetPaymentsAsync();
+var wallets   = await GetWalletsAsync();
+var reviews   = await GetReviewsAsync();
+
+var stats = new DashboardStats
+{
+    TotalOrders = orders.Count,
+    OpenOrders  = orders.Count(o =&gt; o.Status == OrderStatus.Pending),
+    InProgressOrders = orders.Count(o =&gt; o.Status == OrderStatus.InProgress),
+    // …
+    TotalRevenue    = payments.Where(p =&gt; p.Status == PaymentStatus.Success).Sum(p =&gt; p.Amount),
+    WalletLiability = wallets.Sum(w =&gt; w.Balance),
+    AverageRating   = reviews.Count == 0 ? 0 : Math.Round(reviews.Average(r =&gt; r.Rating), 2)
+};
+stats.OrdersByStatus = Enum.GetValues&lt;OrderStatus&gt;()
+    .Select(s =&gt; new OrderStatusBucket { Status = s, Count = orders.Count(o =&gt; o.Status == s) }).ToList();
+// …OrdersByCategory…
+return stats;</pre></div>
+      <div class="note warn"><span class="lab">A dashboard call fans out</span>
+        <p>Building the stats triggers the seven list queries above, several of which themselves aggregate over parents. In
+        Live mode this is a burst of parallel HTTP calls — deliberately bounded by <code class="in">AggregateCap</code>, but
+        still the heaviest page in the app.</p></div>
+      <div class="expert"><span class="lab">Expert note — the buckets are computed client-side</span>
+        <p>The API exposes no aggregate endpoint. Every KPI, trend and chart bucket is derived in the client from the fetched
+        lists. That keeps the client independent of the backend's (missing) analytics but means accuracy is limited to whatever
+        the capped page sizes returned.</p></div>
+    </section>
+
+    <!-- TABLES -->
+    <section id="tables">
+      <p class="eyebrow">Deep dive</p>
+      <h2 class="sec" style="margin-top:6px">Tables, filters &amp; states</h2>
+      <p>Every list page follows the same recipe, which makes the console predictable and the pages boring in the best way.</p>
+      <div class="code" data-lang="text"><div class="bar"><span class="lang">text — the repeated page skeleton</span><button class="copy">Copy</button></div><pre>
+Breadcrumbs (from MainLayout)
+  └─ PageHeader        title · subtitle · count · primary action
+       └─ StatCards    optional KPI row
+            └─ FilterBar   search + selects, in one rounded container
+                 └─ MudTable (class="sanaee-table")
+                      states: loading flag · EmptyState on NoRecords
+                           └─ Detail dialog / drawer on row action</pre></div>
+      <h4>Shared component kit</h4>
+      <p class="muted">Sixteen small, token-aware components keep pages consistent. Highlights:</p>
+      <table>
+        <thead><tr><th>Component</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">PageHeader</code></td><td>Title, subtitle, count chip, action slot.</td></tr>
+          <tr><td><code class="in">StatCard</code></td><td>KPI tile with icon, hover-lift and caption.</td></tr>
+          <tr><td><code class="in">FilterBar</code></td><td>Rounded container grouping the filter controls.</td></tr>
+          <tr><td><code class="in">EmptyState</code></td><td>Consistent no-records UI with optional action.</td></tr>
+          <tr><td><code class="in">MoneyText</code></td><td>Tabular EGP display; null becomes an em dash; optional signed.</td></tr>
+          <tr><td><code class="in">RatingStars</code></td><td>Gold-tinted read-only rating with review count.</td></tr>
+          <tr><td><code class="in">StatusChip</code></td><td>Semantic status badge (colour via <code class="in">StatusFormat</code>).</td></tr>
+          <tr><td><code class="in">EntityAvatar</code></td><td>Initials avatar, teal by default.</td></tr>
+        </tbody>
+      </table>
+      <div class="note tip"><span class="lab">StatusFormat is the single status source</span>
+        <p>Colours and icons for order, offer, payment, provider, application and document statuses all come from
+        <code class="in">StatusFormat</code>, so a status looks identical everywhere it appears. It also provides
+        <code class="in">Spaced()</code>, turning <code class="in">OfferAccepted</code> into “Offer Accepted”.</p></div>
+    </section>
+
+    <!-- DIALOGS -->
+    <section id="dialogs">
+      <p class="eyebrow">Deep dive</p>
+      <h2 class="sec" style="margin-top:6px">Dialogs &amp; actions</h2>
+      <p>Mutations happen in dialogs and confirmations, and every action calls straight through the façade to the active
+        backend. A snackbar reports the outcome.</p>
+      <table>
+        <thead><tr><th>Dialog</th><th>Used for</th><th>Backed by</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">CreateOrderDialog</code></td><td>Post a job (customer, category, address, problem).</td><td><code class="in">CreateOrderAsync</code></td></tr>
+          <tr><td><code class="in">CreateOfferDialog</code></td><td>Provider bids on an order.</td><td><code class="in">CreateOfferAsync</code></td></tr>
+          <tr><td><code class="in">OrderDetailsDialog</code></td><td>Request, offers, timeline, fulfil/cancel.</td><td>offer + order actions</td></tr>
+          <tr><td><code class="in">ProviderDetailsDialog</code></td><td>Profile, skills, KYC, reviews.</td><td>aggregated reads</td></tr>
+          <tr><td><code class="in">ReasonDialog</code> / <code class="in">ConfirmDialog</code></td><td>Capture a cancellation/rejection reason; generic confirm.</td><td><code class="in">CancelOrderAsync</code>, document actions</td></tr>
+        </tbody>
+      </table>
+      <div class="expert"><span class="lab">Expert note — cancellation body shape</span>
+        <p>Only a free-text reason is collected, but the admin-cancel command expects
+        <code class="in">(OrderId, ReasonId, Notes, IssueRefund)</code>. The client sends <code class="in">reasonId = 0</code> and
+        puts the text in <code class="in">notes</code> with <code class="in">issueRefund = false</code>, so a completed order
+        cannot be refunded through the UI. See <a href="#issues">Known quirks</a>.</p></div>
+    </section>
+
+    <!-- CHAT -->
+    <section id="chat">
+      <p class="eyebrow">Deep dive</p>
+      <h2 class="sec" style="margin-top:6px">Messaging</h2>
+      <p>The messages page is a master–detail layout: order threads on the left, the selected conversation on the right, with
+        self/other bubble alignment, system-message styling, timestamps and read receipts.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — messages are flattened with their order id</span><button class="copy">Copy</button></div><pre>
+var orderIds = (await GetOrdersAsync()).Select(o =&gt; o.Id).Where(id =&gt; id != 0).Take(AggregateCap);
+return await GetForParentsAsync&lt;GetMessageDto, MessageListItem&gt;(orderIds,
+    id =&gt; $"api/Messages?OrderId={id}",
+    (orderId, d) =&gt; new MessageListItem
+    {
+        OrderId = orderId,          // the DTO omits it, so inject the parent id
+        Sender = d.SenderId.ToString(),
+        Content = d.Content,
+        Type = d.Type,
+        SentAt = d.SentAt,
+        IsSystemMessage = d.IsSystemMessage
+    });</pre></div>
+      <div class="note warn"><span class="lab">Chat is read-mostly</span>
+        <p>The composer is presentational; sending is not wired to the API. The backend exposes a SignalR hub at
+        <code class="in">/hubs/chat</code> for real-time delivery, but the console does not connect to it — this page reads
+        historical messages only.</p></div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- ROUTES -->
+    <section id="routes">
+      <p class="eyebrow">Reference</p>
+      <h2 class="sec" style="margin-top:6px">Route map</h2>
+      <p class="muted">All 21 client routes. Every one is <code class="in">@rendermode InteractiveAuto</code>. Search or filter
+        by group.</p>
+      <div class="controls">
+        <input id="ep-search" type="search" placeholder="Search routes — try 'wallet', 'provider', 'payment' …">
+        <div class="chips" id="ep-chips"></div>
+        <div class="ep-count" id="ep-count"></div>
+      </div>
+      <div id="ep-list"></div>
+    </section>
+
+    <!-- ISSUES -->
+    <section id="issues">
+      <p class="eyebrow">Reference</p>
+      <h2 class="sec" style="margin-top:6px">Known quirks</h2>
+      <p>The console leans on an API that was never designed for a browser. These are the seams — mostly faithful, sometimes
+        lossy.</p>
+      <table>
+        <thead><tr><th>#</th><th>Quirk</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Offers list DTO has no <code class="in">OfferId</code></td><td>Accept / reject / cancel offer cannot address a real id (the UI sets it to 0); actions hit the endpoint but cannot succeed.</td></tr>
+          <tr><td>2</td><td>No aggregate/analytics endpoint</td><td>All dashboard KPIs and buckets are computed client-side from capped pages.</td></tr>
+          <tr><td>3</td><td>Per-entity-only endpoints</td><td>Offers, documents, reviews, messages, addresses, phones are aggregated by iterating up to 20 parents (<code class="in">AggregateCap</code>).</td></tr>
+          <tr><td>4</td><td><code class="in">pageSize</code> capped at 100</td><td>“All” reads request 100; larger asks return a 400 validation error.</td></tr>
+          <tr><td>5</td><td>Availability toggle ignores the requested value</td><td><code class="in">SetProviderAvailabilityAsync(available)</code> calls an endpoint that flips the current state; the argument is informational only.</td></tr>
+          <tr><td>6</td><td>Admin cancel needs a <code class="in">ReasonId</code>, UI has free text</td><td>Sends <code class="in">reasonId: 0</code> with the text in <code class="in">notes</code> and <code class="in">issueRefund: false</code>.</td></tr>
+          <tr><td>7</td><td>No audit-log endpoint</td><td><code class="in">GetAuditLogsAsync</code> returns an empty list; the Audit Logs page is structurally complete but always empty.</td></tr>
+          <tr><td>8</td><td>No reviews list endpoint (per reviewee only)</td><td>The UI omits the reviewee name and shows reviews floored to known provider/customer ids.</td></tr>
+          <tr><td>9</td><td>No CORS, no auth on the API</td><td>Worked around with the same-origin proxy; the whole console is unauthenticated and trusted-network-only.</td></tr>
+          <tr><td>10</td><td>Route typo blocks API startup</td><td>Fixed in this fork (<code class="in">[contorller]</code> → <code class="in">[controller]</code>); the client points at the corrected <code class="in">api/OrderStatusHistories/admin</code> path.</td></tr>
+          <tr><td>11</td><td>Broken order-history projection on the API</td><td><code class="in">GET /api/OrderStatusHistories/admin</code> returns 500 server-side; the Order Timeline page surfaces the empty/error state.</td></tr>
+          <tr><td>12</td><td>Chat not connected to SignalR</td><td>Reads historical messages; sending and real-time updates are not implemented.</td></tr>
+        </tbody>
+      </table>
+      <div class="note tip"><span class="lab">What gracefully degrades</span>
+        <p>When the API is unreachable the proxy returns 502 and the client stores it in <code class="in">LastError</code> while
+        returning empty lists — pages show <code class="in">EmptyState</code> rather than throwing. Flipping back to Demo restores
+        a fully populated console instantly.</p></div>
+    </section>
+
+    <!-- BUILD -->
+    <section id="build">
+      <p class="eyebrow">Reference</p>
+      <h2 class="sec" style="margin-top:6px">Build &amp; run</h2>
+      <div class="code" data-lang="bash"><div class="bar"><span class="lang">bash</span><button class="copy">Copy</button></div><pre>
+dotnet restore "SanaeeUI/SanaeeUI.sln"
+dotnet build   "SanaeeUI/SanaeeUI.sln"
+dotnet run     --project "SanaeeUI/SanaeeUI" --launch-profile http
+
+# release publish (serves the static WASM assets + host):
+dotnet publish "SanaeeUI/SanaeeUI" -c Release</pre></div>
+      <table>
+        <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>UI URL</td><td><code class="in">http://localhost:5105</code></td></tr>
+          <tr><td>Proxy path</td><td><code class="in">/api/{**path}</code> → <code class="in">SanaeeApi:BaseUrl</code></td></tr>
+          <tr><td>Mode at startup</td><td>Demo (in-memory)</td></tr>
+          <tr><td>Backend for Live</td><td>The Sanaee API on <code class="in">:5270</code></td></tr>
+          <tr><td>Key config</td><td><code class="in">SanaeeApi:BaseUrl</code> (host + client)</td></tr>
+        </tbody>
+      </table>
+      <div class="expert"><span class="lab">Expert note — http profile</span>
+        <p>The <code class="in">http</code> profile sets <code class="in">applicationUrl=http://localhost:5105</code> and
+        <code class="in">ASPNETCORE_ENVIRONMENT=Development</code>; <code class="in">UseWebAssemblyDebugging()</code> is only
+        enabled there. A benign “failed to determine the https port for redirect” log line appears under the http profile and
+        can be ignored.</p></div>
+    </section>
+
+    <!-- GLOSSARY -->
+    <section id="glossary">
+      <p class="eyebrow">Reference</p>
+      <h2 class="sec" style="margin-top:6px">Glossary</h2>
+      <details class="faq"><summary>Blazor Web App</summary><div class="b">A single .NET project that hosts Razor components and can render them on the server, in the browser via WebAssembly, or both — chosen per component with a render mode.</div></details>
+      <details class="faq"><summary>Render mode</summary><div class="b">Where and how a component becomes interactive. <code class="in">InteractiveAuto</code> starts on the server and hands over to WebAssembly once the bundle is available.</div></details>
+      <details class="faq"><summary>WebAssembly (WASM)</summary><div class="b">.NET running inside the browser sandbox. The client project compiles the UI to a WASM bundle the host serves.</div></details>
+      <details class="faq"><summary>Prerendering</summary><div class="b">Server-rendered HTML for the first paint so the page appears before interactivity is wired up.</div></details>
+      <details class="faq"><summary>BFF / reverse proxy</summary><div class="b">Backend-for-frontend: the host forwards <code class="in">/api/**</code> to the real API so the browser only ever talks to its own origin (avoiding CORS).</div></details>
+      <details class="faq"><summary>Facade</summary><div class="b">A single interface (<code class="in">ISanaeeDataService</code>) that hides whether data comes from the demo dataset or the live API.</div></details>
+      <details class="faq"><summary>Aggregation (N+1 fan-out)</summary><div class="b">Calling a per-parent endpoint once per parent and flattening the results, used for entities the API only exposes per order/provider/user.</div></details>
+      <details class="faq"><summary>Design token</summary><div class="b">A named value (colour, radius, font) held in one place. Here every colour lives in <code class="in">SanaeeBrand</code> and is emitted as a CSS variable.</div></details>
+      <details class="faq"><summary>MudBlazor</summary><div class="b">A Material-Design component library for Blazor, supplying the theme provider, tables, dialogs, charts and shell primitives.</div></details>
+      <details class="faq"><summary>InteractiveAuto</summary><div class="b">The default render mode for every page here: server-first, WASM-after, one service graph for both.</div></details>
+      <div class="colophon">
+        <p class="muted">Sanaee Delivery operations console — an addition by this fork. Runtime .NET 10 · Blazor Web App ·
+          MudBlazor 9 · InteractiveAuto. Original backend under <code class="in">src/</code> is unchanged except the histories
+          route fix.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+// ---- route explorer -------------------------------------------------------
+const ROUTES = [
+  ["/",                   "Dashboard",            "Get oriented"],
+  ["/orders",             "Orders",               "Marketplace"],
+  ["/offers",             "Offers",               "Marketplace"],
+  ["/chat",               "Messages",             "Marketplace"],
+  ["/customers",          "Customers",            "People"],
+  ["/providers",          "Providers",            "People"],
+  ["/users",              "Users",                "People"],
+  ["/documents",          "Provider Documents",   "KYC & Trust"],
+  ["/applications",       "Applications",         "KYC & Trust"],
+  ["/provider-status",    "Provider Status",      "KYC & Trust"],
+  ["/reviews",            "Reviews",              "KYC & Trust"],
+  ["/categories",         "Categories",           "Catalog"],
+  ["/provider-categories","Provider Skills",      "Catalog"],
+  ["/cancellation-reasons","Cancellation Reasons","Catalog"],
+  ["/wallets",            "Wallets",              "Finance"],
+  ["/transactions",       "Transactions",         "Finance"],
+  ["/payments",           "Payments",             "Finance"],
+  ["/order-history",      "Order Timeline",       "Operations"],
+  ["/addresses",          "Addresses",            "Operations"],
+  ["/phones",             "Phones",               "Operations"],
+  ["/audit",              "Audit Logs",           "System"]
+];
+const GROUPS = ["All","Get oriented","Marketplace","People","KYC & Trust","Catalog","Finance","Operations","System"];
+let activeGroup = "All", query = "";
+
+function renderChips(){
+  const c = document.getElementById("ep-chips");
+  c.innerHTML = GROUPS.map(g => `<span class="chip ${g===activeGroup?'active':''}" data-g="${g}">${g}</span>`).join("");
+  c.querySelectorAll(".chip").forEach(ch => ch.onclick = () => { activeGroup = ch.dataset.g; renderChips(); renderList(); });
+}
+function renderList(){
+  const list = document.getElementById("ep-list");
+  const q = query.trim().toLowerCase();
+  const rows = ROUTES.filter(([p,t,g]) => {
+    if (activeGroup !== "All" && g !== activeGroup) return false;
+    if (!q) return true;
+    return (p + " " + t + " " + g).toLowerCase().includes(q);
+  });
+  document.getElementById("ep-count").textContent = `${rows.length} route${rows.length!==1?'s':''}`;
+  list.innerHTML = rows.map(([p,t,g]) => `
+    <div class="ep">
+      <div class="ep-head">
+        <span class="m get">route</span>
+        <span class="ep-route">${p}</span>
+        <span class="ep-title">${t}</span>
+      </div>
+      <div class="ep-body">
+        <p>${t} — opens the “${t}” page.</p>
+        <div>
+          <span class="ep-tag">${g}</span>
+          <span class="ep-tag">InteractiveAuto</span>
+          <span class="ep-tag">renders via ISanaeeDataService</span>
+        </div>
+      </div>
+    </div>`).join("") || `<div class="ep-count">No routes match.</div>`;
+  list.querySelectorAll(".ep-head").forEach(h => h.onclick = () => h.parentElement.classList.toggle("open"));
+}
+
+// ---- theme toggle ---------------------------------------------------------
+const root = document.documentElement;
+const themeToggle = document.getElementById("themeToggle");
+function applyTheme(t){
+  root.dataset.theme = t;
+  themeToggle.textContent = t === "dark" ? "Light mode" : "Dark mode";
+  try { localStorage.setItem("sanaee-fe-doc-theme", t); } catch(e){}
+}
+applyTheme(localStorage.getItem("sanaee-fe-doc-theme") || "light");
+themeToggle.addEventListener("click", () => applyTheme(root.dataset.theme === "dark" ? "light" : "dark"));
+
+// ---- expert toggle --------------------------------------------------------
+const expertBtn = document.getElementById("expertToggle");
+expertToggle.onclick = () => {
+  const hidden = root.classList.toggle("hide-expert");
+  expertToggle.textContent = hidden ? "Show expert notes" : "Hide expert notes";
+};
+
+// ---- copy buttons ---------------------------------------------------------
+document.querySelectorAll(".code .copy").forEach(btn => btn.onclick = () => {
+  const pre = btn.closest(".code").querySelector("pre");
+  const text = pre.innerText.replace(/\u00a0/g, " ");
+  navigator.clipboard.writeText(text).then(() => {
+    const old = btn.textContent; btn.textContent = "Copied";
+    setTimeout(() => btn.textContent = old, 1200);
+  });
+});
+
+// ---- scroll spy -----------------------------------------------------------
+const navLinks = [...document.querySelectorAll("#nav a")];
+const sections = navLinks.map(a => document.getElementById(a.getAttribute("href").slice(1))).filter(Boolean);
+function spy(){
+  const y = window.scrollY + 130;
+  let cur = sections[0];
+  for (const s of sections) if (s.offsetTop <= y) cur = s;
+  navLinks.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + (cur && cur.id)));
+}
+window.addEventListener("scroll", spy, { passive: true });
+
+// ---- init -----------------------------------------------------------------
+renderChips(); renderList(); spy();
+</script>
+</body>
+</html>
