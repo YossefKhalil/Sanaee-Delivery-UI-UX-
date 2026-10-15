@@ -531,23 +531,33 @@ app.Run();</pre></div>
       <p class="eyebrow">Core concept</p>
       <h2 class="sec" style="margin-top:6px">Error handling</h2>
       <p>Handlers and domain entities <em>throw</em>. A single <code class="in">GlobalExceptionHandler</code> (an
-        <code class="in">IExceptionHandler</code>) translates each exception type to a status code and a
-        <code class="in">ProblemDetails</code> body. Controllers contain no try/catch.</p>
+        <code class="in">IExceptionHandler</code>, registered in <code class="in">Program.cs</code> and living in
+        <code class="in">API/Exceptions/</code>) translates each exception type to a status code and a
+        <code class="in">ProblemDetails</code> body. Controllers contain no try/catch. The <code class="in">switch</code> is
+        exhaustive-by-convention with a catch-all that never leaks internals.</p>
       <table>
-        <thead><tr><th>Thrown</th><th>HTTP</th><th>Produced by</th></tr></thead>
+        <thead><tr><th>Thrown</th><th>HTTP</th><th>Title emitted</th><th>Produced by</th></tr></thead>
         <tbody>
-          <tr><td><code class="in">ValidationException</code></td><td>400</td><td>FluentValidation behaviour / validators.</td></tr>
-          <tr><td><code class="in">BadRequestException</code></td><td>400</td><td>Command handlers (e.g. wrong OTP).</td></tr>
-          <tr><td><code class="in">NotFoundException</code></td><td>404</td><td>Handlers when an id does not exist.</td></tr>
-          <tr><td><code class="in">ConflictException</code></td><td>409</td><td>State conflicts.</td></tr>
-          <tr><td><code class="in">DomainException</code></td><td>400</td><td>Entity invariants (e.g. accepting an offer twice).</td></tr>
-          <tr><td>anything else</td><td>500</td><td>Logged; no internal detail leaked.</td></tr>
+          <tr><td><code class="in">ValidationException</code></td><td>400</td><td><code class="in">Validation Failed</code></td>
+            <td>FluentValidation behaviour. Emitted as <code class="in">ValidationProblemDetails</code> with errors <strong>grouped by property name</strong> into a dictionary.</td></tr>
+          <tr><td><code class="in">BadRequestException</code></td><td>400</td><td><code class="in">Bad request sent!</code></td><td>Command handlers (e.g. wrong OTP).</td></tr>
+          <tr><td><code class="in">NotFoundException</code></td><td>404</td><td><code class="in">Resource not found!</code></td><td>Handlers when an id does not exist.</td></tr>
+          <tr><td><code class="in">ConflictException</code></td><td>409</td><td><code class="in">Conflict!</code></td><td>State conflicts.</td></tr>
+          <tr><td><code class="in">InvalidOperationException</code></td><td>500</td><td><code class="in">Invalid Operation!</code></td><td>Misuse of a service/operation.</td></tr>
+          <tr><td><code class="in">DomainException</code></td><td><strong>406</strong></td><td><code class="in">Domain Exception!</code></td>
+            <td>Entity invariants — every <code class="in">Order.AcceptOffer/StartWork/Complete/Cancel*</code> guard. Note the status: <strong>406 Not Acceptable</strong>, not 400.</td></tr>
+          <tr><td>anything else</td><td>500</td><td><code class="in">Server Error!</code></td><td>Fallback; detail is the constant “An unhandled exception!” — no internal detail leaked.</td></tr>
         </tbody>
       </table>
       <div class="code" data-lang="json"><div class="bar"><span class="lang">json — a domain rule firing</span><button class="copy">Copy</button></div><pre>
 // Order.StartWork() when the status is not OfferAccepted:
-{ "type": "…", "title": "Invalid Operation!", "status": 400,
+{ "type": "…", "title": "Domain Exception!", "status": 406,
   "detail": "You must accept offer for this order first." }</pre></div>
+      <div class="note warn"><span class="lab">406 for a business-rule violation is unusual</span>
+        <p><code class="in">DomainException</code> is the workhorse of the whole state machine, yet it surfaces as
+        <strong>406 Not Acceptable</strong> — a content-negotiation status. Clients that branch on 400/409 for “invalid state”
+        will miss every guard on <code class="in">Order</code>. <code class="in">InvalidOperationException</code> is also mapped to
+        <strong>500</strong>, which turns recoverable misuse into server errors.</p></div>
     </section>
 
     <!-- VALIDATION -->
@@ -613,12 +623,21 @@ public class AppDbContext(DbContextOptions&lt;AppDbContext&gt; options)
         <p>The audit-log set is spelled <code class="in">AduitLogs</code> (missing the “d” in Audit). The table name follows it,
         so raw SQL and the property must both use the typo.</p></div>
       <h4>Migrations</h4>
-      <p>Twelve migrations build the schema, from the initial split through wall-entity and audit-log reworks to order fixes:</p>
-      <div class="code" data-lang="text"><div class="bar"><span class="lang">text</span><button class="copy">Copy</button></div><pre>
-20260807230706_Initial_Migration           20260827025513_AddIndexToWallet
-20260824200400_AddIsDefaultProperity       20260831045832_AddAuditLog (approx.)
-20260827020452_EditWalletEntity            20260827025513… → order/offer edits
-…                                           202609****_Edit Order / Repair Order Entity</pre></div>
+      <p>Twelve migrations build the schema, from the initial split through wallet/audit reworks to a cluster of late order fixes
+        (note the spaces in two names):</p>
+      <div class="code" data-lang="text"><div class="bar"><span class="lang">text — Infrastructure/Persistence/Migrations</span><button class="copy">Copy</button></div><pre>
+20260807230706_Initial_Migration
+20260824200400_AddIsDefaultProperity
+20260827020452_EditWalletEntity
+20260827025513_AddIndexToWallet
+20260831075231_AddAuditLog
+20260909105830_EditUserAndProvider
+20260912153529_AddChangedByinProviderDocumentEntity
+20260925122616_Additional editing
+20260925124606_Edit Order
+20260925130046_Repair Order Entity
+20260926050646_repair
+20261013112800_Some editing at some entities</pre></div>
       <div class="expert"><span class="lab">Expert note — no auto-migrate</span>
         <p>The app never calls <code class="in">Database.Migrate()</code>. On a brand-new machine the first request that touches the
         database fails until <code class="in">dotnet ef database update</code> is run against the API's startup project.</p></div>
@@ -677,6 +696,45 @@ public void CancelByAdmin(int ReasonId, bool IssueRefund)
     Status = OrderStatus.Cancelled;
     AddDomainEvent(new OrderCancelledByAdminEvent(Id, UserId, Offer?.ProviderId, ReasonId, IssueRefund));
 }</pre></div>
+
+      <h3 class="h3" style="margin-top:26px">Supporting entities worth knowing</h3>
+      <table>
+        <thead><tr><th>Entity</th><th>Shape</th><th>Behaviour</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">CancelationReason</code></td>
+            <td><code class="in">ReasonId · Text · ApplicableTo (UserType) · IsActive</code></td>
+            <td><code class="in">Freeze()</code>/<code class="in">Unfreeze()</code> toggle <code class="in">IsActive</code> idempotently (they return early if already in the target state). <code class="in">ApplicableTo</code> scopes a reason to Customer, Provider or Admin.</td></tr>
+          <tr><td><code class="in">Category</code></td>
+            <td><code class="in">CategoryId · Name · Description · IconUrl · IsActive · ParentCategoryId?</code></td>
+            <td>Self-referencing tree via <code class="in">ParentCategory</code>/<code class="in">SubCategories</code>, soft-deletable, and links to <code class="in">Providers</code>. Also has <code class="in">Freeze()</code>/<code class="in">Unfreeze()</code>.</td></tr>
+          <tr><td><code class="in">Provider</code></td>
+            <td><code class="in">ProviderId · NationalNumber · IsAvailable · UserId</code></td>
+            <td>Aggregate root for KYC: owns collections of <code class="in">ApplicationHistories</code>, <code class="in">ProviderDocuments</code> and <code class="in">ProviderCategories</code>.</td></tr>
+        </tbody>
+      </table>
+      <div class="note warn"><span class="lab">Category mapping will null-ref on root categories</span>
+        <p><code class="in">CategoryMappingProfile</code> maps <code class="in">GetCategoryDto.ParentCategoryName</code> with
+        <code class="in">opt.MapFrom(src =&gt; src.ParentCategory!.Name)</code>. The null-forgiving operator
+        <code class="in">!</code> lies: every top-level category has a <code class="in">null</code> parent, so projecting one throws.
+        It needs a conditional map (or <code class="in">src.ParentCategory?.Name</code>).</p></div>
+
+      <h3 class="h3" style="margin-top:26px">Provider onboarding / KYC</h3>
+      <p>Four entities form the trust trail for getting a provider live. Each history table records
+        <code class="in">Status</code>, optional <code class="in">Notes</code>, a <code class="in">ChangedAt</code> timestamp and a
+        <code class="in">ChangedBy</code> admin id:</p>
+      <ul>
+        <li><code class="in">ApplicationHistory</code> — the application decision trail (<code class="in">ApplicationStatus</code>:
+          Pending · Approved · Rejected · ActionRequired).</li>
+        <li><code class="in">ProviderStatusHistory</code> — the account status trail (<code class="in">ProviderStatus</code>:
+          Active · Suspended · Inactive).</li>
+        <li><code class="in">ProviderDocument</code> — a submitted KYC artefact (<code class="in">DocumentType</code>: NationalId ·
+          CriminalRecord · WorkPermit · PersonalPhoto) with a <code class="in">DocumentStatus</code> (Pending · Approved · Rejected ·
+          Expired · ReUploadRequired), a <code class="in">DocumentUrl</code> and an optional <code class="in">ChangedBy</code>.</li>
+        <li><code class="in">ProviderCategory</code> — the skills that let a provider receive matching orders.</li>
+      </ul>
+      <p>Admin actions on documents and statuses flow through the <code class="in">ProviderDocuments</code> and
+        <code class="in">ProviderStatusHistories</code> features, which write these tables; the frontend exposes them as the
+        <strong>Applications</strong>, <strong>Provider Status</strong> and <strong>Provider Documents</strong> pages.</p>
     </section>
 
     <!-- EVENTS -->
@@ -701,6 +759,42 @@ public void CancelByAdmin(int ReasonId, bool IssueRefund)
         <p>Because the soft-delete interceptor replaced the domain-event interceptor during registration
         (see <a href="#interceptors">Interceptors</a>), and because <code class="in">NotificationService</code> is a stub, domain
         events do not currently reach any real consumer. The wiring exists; the plumbing is inert.</p></div>
+
+      <h3 class="h3" style="margin-top:26px">How an event travels</h3>
+      <p>Events are plain records implementing an empty <code class="in">IDomainEvent</code> marker. On
+        <code class="in">SaveChanges</code> the dispatch interceptor wraps each one in a
+        <code class="in">DomainEventNotification&lt;TEvent&gt;</code> (a MediatR <code class="in">INotification</code>) and publishes it,
+        so every <code class="in">INotificationHandler&lt;DomainEventNotification&lt;TEvent&gt;&gt;</code> runs — often several per event, in
+        parallel fan-out. Handlers split cleanly into <strong>notify</strong> (push via
+        <code class="in">INotificationService</code>), <strong>side-effect</strong> (refund via <code class="in">IPaymentService</code>,
+        fine via <code class="in">IProviderPenaltyService</code>) and <strong>audit</strong> (write an
+        <code class="in">AuditLog</code> row through the unit of work).</p>
+      <table>
+        <thead><tr><th>Event</th><th>Signature</th><th>Handlers (feature folder)</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">OfferCreatedEvent</code></td><td><code class="in">(Offer Offer, int UserId, int ProviderId)</code></td>
+            <td>NotifyCustomerOnOfferCreated → push “offer created” to the customer.</td></tr>
+          <tr><td><code class="in">OfferAcceptedEvent</code></td><td><code class="in">(int OfferId, int OrderId, int UserId, int ProviderId)</code></td>
+            <td>NotifyProviderOnOfferAccepted → push “offer accepted” to the winning provider.</td></tr>
+          <tr><td><code class="in">MessageSentDomainEvent</code></td><td><code class="in">(Message Message)</code></td>
+            <td><span class="m">none registered</span> — intended to fan out over SignalR.</td></tr>
+          <tr><td><code class="in">OrderCancelledByCustomerEvent</code></td><td><code class="in">(int OrderId, int UserId, int? ProviderId, int ReasonId)</code></td>
+            <td>NotifyProviderOnCustomerCancellation (push) · ProcessCustomerRefund → <code class="in">ProcessCustomerCancellationRefundAsync</code>.</td></tr>
+          <tr><td><code class="in">OrderCancelledByProviderEvent</code></td><td><code class="in">(int OrderId, int UserId, int ProviderId, int ReasonId)</code></td>
+            <td>NotifyCustomerOnProviderCancellation (apology push) · ApplyProviderPenalty → <code class="in">ApplyPenaltyForCancellationAsync</code>.</td></tr>
+          <tr><td><code class="in">OrderCancelledByAdminEvent</code></td><td><code class="in">(int OrderID, int UserId, int? ProviderId, int ReasonId, bool IssueRefund)</code></td>
+            <td>NotifyBothParties (push customer + provider) · RefundPayment (if <code class="in">IssueRefund</code>) · AuditLogHandler (inserts an <code class="in">AuditLog</code> with the reason text).</td></tr>
+        </tbody>
+      </table>
+      <div class="note beginner"><span class="lab">Why three handlers for one admin cancel</span>
+        <p>An admin cancellation is the only action with a legal, financial and audit dimension, so it fans out to three
+        independent handlers. Each is a single responsibility that can later be swapped (e.g. a real payment gateway) without
+        touching the <code class="in">Order</code> entity — the entity only records intent and raises the event.</p></div>
+      <div class="note warn"><span class="lab">Inconsistent namespaces and casing</span>
+        <p>Two event records live in a bare <code class="in">Domain.Events</code> namespace instead of
+        <code class="in">Core.Domain.Events</code> (<code class="in">OfferCreatedEvent</code>, <code class="in">OrderCancelledByAdminEvent</code>), and
+        the admin event names its first parameter <code class="in">OrderID</code> while the others use <code class="in">OrderId</code>. Cosmetic,
+        but it forces extra <code class="in">using</code> statements and trips up anyone refactoring by pattern.</p></div>
     </section>
 
     <!-- ENUMS -->
@@ -769,6 +863,11 @@ public void CancelByAdmin(int ReasonId, bool IssueRefund)
 }</pre></div>
       <p class="muted">Override per-environment with user-secrets or the double-underscore env form
         (<code class="in">ConnectionStrings__DefaultConnection</code>), which is the least invasive way to switch a machine to LocalDB.</p>
+      <div class="note beginner"><span class="lab">Ports &amp; profiles (launchSettings.json)</span>
+        <p>The <code class="in">http</code> profile binds <strong>http://localhost:5270</strong>; the <code class="in">https</code> profile binds
+        <strong>https://localhost:7048</strong> (plus 5270) and sets <code class="in">ASPNETCORE_ENVIRONMENT=Development</code>. Both set
+        <code class="in">launchUrl: swagger</code> even though Swagger/OpenAPI is <em>not</em> registered in
+        <code class="in">Program.cs</code> — the launch URL points at a page that does not exist.</p></div>
     </section>
 
     <hr class="rule">
@@ -790,6 +889,41 @@ Features/Orderes/
 │  └─ GetOrderById/
 ├─ Dtos/                      GetOrderDto, GetAllOrdersForAdminDto …
 └─ Profiles/OrderMappingProfile.cs</pre></div>
+      <h3 class="h3" style="margin-top:26px">The full feature inventory</h3>
+      <p>Twenty feature folders sit under <code class="in">Application/Features/</code>. Counts below are command and
+        query <em>files</em> (each folder may hold several variants of the same operation). Note the misspellings are
+        faithful to the source: <code class="in">Orderes</code>, <code class="in">Offeres</code>, <code class="in">Provideres</code>,
+        <code class="in">Pymentes</code>, <code class="in">Reviewes</code>, <code class="in">Walletes</code>,
+        <code class="in">WalletTransactiones</code>, <code class="in">CancelatoinReasones</code>.</p>
+      <table>
+        <thead><tr><th>Feature</th><th>Commands</th><th>Queries</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">Addresses</code></td><td>12</td><td>9</td><td>Default-address logic; has a mis-scoped validator.</td></tr>
+          <tr><td><code class="in">ApplicationHistories</code></td><td>3</td><td>3</td><td>Provider KYC application trail.</td></tr>
+          <tr><td><code class="in">Auth</code></td><td>3</td><td>0</td><td>Plain login/register — no token issued.</td></tr>
+          <tr><td><code class="in">CancelatoinReasones</code></td><td>15</td><td>11</td><td>Freeze/unfreeze per <code class="in">ApplicableTo</code>.</td></tr>
+          <tr><td><code class="in">Categories</code></td><td>18</td><td>6</td><td>Self-referencing parent/sub-categories.</td></tr>
+          <tr><td><code class="in">Customers</code></td><td>3</td><td>6</td><td>Users with <code class="in">UserType.Customer</code>.</td></tr>
+          <tr><td><code class="in">Messages</code></td><td>15</td><td>6</td><td>Text/image/voice/location factories.</td></tr>
+          <tr><td><code class="in">Offeres</code></td><td>12</td><td>9</td><td>Bidding + accept; raises two events.</td></tr>
+          <tr><td><code class="in">Orderes</code></td><td>18</td><td>9</td><td>Lifecycle + three cancellation paths.</td></tr>
+          <tr><td><code class="in">OrderStatusHistories</code></td><td>0</td><td>6</td><td>Read-only timeline; broken projection.</td></tr>
+          <tr><td><code class="in">ProviderCategories</code></td><td>6</td><td>3</td><td>Provider ↔ category skills.</td></tr>
+          <tr><td><code class="in">ProviderDocuments</code></td><td>6</td><td>6</td><td>Approve/reject KYC documents.</td></tr>
+          <tr><td><code class="in">Provideres</code></td><td>6</td><td>9</td><td>Availability + status.</td></tr>
+          <tr><td><code class="in">ProviderStatusHistories</code></td><td>3</td><td>3</td><td>Active/Suspended/Inactive trail.</td></tr>
+          <tr><td><code class="in">Pymentes</code></td><td>12</td><td>3</td><td>Cash/Card/Wallet/Fawry/VodafoneCash.</td></tr>
+          <tr><td><code class="in">Reviewes</code></td><td>9</td><td>6</td><td>Separate read models per reviewee type.</td></tr>
+          <tr><td><code class="in">UserPhones</code></td><td>12</td><td>6</td><td>Multiple phones + default + OTP.</td></tr>
+          <tr><td><code class="in">Users</code></td><td>15</td><td>0</td><td>Commands only — reads go through Customers/Providers.</td></tr>
+          <tr><td><code class="in">Walletes</code></td><td>15</td><td>6</td><td>Deposit/withdraw + freeze.</td></tr>
+          <tr><td><code class="in">WalletTransactiones</code></td><td>3</td><td>9</td><td>Seven transaction types.</td></tr>
+        </tbody>
+      </table>
+      <div class="note beginner"><span class="lab">Read models are split by role, not by entity</span>
+        <p>There is no “get all users” query — <code class="in">Users</code> is commands-only, while reads are served by the
+        role-specific <code class="in">Customers</code> and <code class="in">Providers</code> features. That keeps DTOs narrow (a
+        customer view never leaks a national number) but means adding a new role means adding a new feature folder.</p></div>
       <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — controller + handler pattern</span><button class="copy">Copy</button></div><pre>
 [HttpPatch("accept/{OfferId}")]
 public async Task&lt;ActionResult&gt; AcceptOffer(int OfferId)
@@ -832,6 +966,60 @@ var page = await uow.Repository&lt;Order&gt;()
       <div class="note warn"><span class="lab">Blanket filters disabled</span>
         <p>Several list handlers call <code class="in">.IgnoreQueryFilters()</code>, which bypasses EF's soft-delete global filters and
         can return soft-deleted rows. It is convenient, but a maintenance trap.</p></div>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — the contract</span><button class="copy">Copy</button></div><pre>
+public interface IUnitOfWork : IDisposable
+{
+    IAddressRepository    AddressRepository  { get; }
+    IUserPhoneRepository  UserPhoneRepository{ get; }
+    IWalletRepository     WalletRepository   { get; }
+    IBaseRepository&lt;TEntity&gt; Repository&lt;TEntity&gt;() where TEntity : class;
+    Task&lt;int&gt; CompleteAsync(CancellationToken cts);
+}</pre></div>
+      <p class="muted">Note the interface mixes <em>typed</em> repositories (for the three aggregates with bespoke queries) with a
+        <em>generic</em> <code class="in">Repository&lt;T&gt;()</code> for everything else, and its members are named
+        <code class="in">CompleteAsync</code> while most handlers call <code class="in">SaveChangesAsync</code> — both exist depending on the
+        handler.</p>
+
+      <h3 class="h3" style="margin-top:26px">Paging helpers</h3>
+      <p>Paging is a hand-rolled extension rather than a library. <code class="in">PaginationExtensions.ToPagedListAsync&lt;T&gt;</code>
+        counts the source, then <code class="in">Skip((pageNumber-1)*pageSize).Take(pageSize)</code>, and wraps the result in
+        a <code class="in">PagedResult&lt;T&gt;</code> that computes <code class="in">TotalPages</code>,
+        <code class="in">HasPreviousPage</code> and <code class="in">HasNextPage</code> on the fly.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — PagedResult&lt;T&gt;</span><button class="copy">Copy</button></div><pre>
+public class PagedResult&lt;T&gt;
+{
+    public IReadOnlyList&lt;T&gt; Items { get; }
+    public int PageNumber { get; }
+    public int PageSize   { get; }
+    public int TotalCount { get; }
+    public int TotalPages =&gt; (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public bool HasPreviousPage =&gt; PageNumber &gt; 1;
+    public bool HasNextPage     =&gt; PageNumber &lt; TotalPages;
+}</pre></div>
+
+      <h3 class="h3" style="margin-top:26px">Infrastructure stubs</h3>
+      <p>Three application contracts are satisfied by <em>no-op</em> implementations in
+        <code class="in">Infrastructure/Persistence/Services/</code>. Every method is
+        <code class="in">await Task.CompletedTask</code> — the seams exist so a real provider (SMS, payment gateway, penalty
+        engine) can be dropped in without touching the domain.</p>
+      <table>
+        <thead><tr><th>Service</th><th>Methods (all no-ops)</th><th>Called from</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">NotificationService</code> : <code class="in">INotificationService</code></td>
+            <td><code class="in">SendPushAsync(userId, title, message)</code> · <code class="in">SendPushNotificationAsync(...)</code></td>
+            <td>Every “notify” domain-event handler.</td></tr>
+          <tr><td><code class="in">PaymentService</code> : <code class="in">IPaymentService</code></td>
+            <td><code class="in">ProcessCustomerCancellationRefundAsync(orderId, customerId)</code> · <code class="in">RefundOrderAsync(orderId, userId)</code></td>
+            <td>Customer- and admin-cancellation refund handlers.</td></tr>
+          <tr><td><code class="in">ProviderPenaltyService</code> : <code class="in">IProviderPenaltyService</code></td>
+            <td><code class="in">ApplyPenaltyForCancellationAsync(providerId, orderId, reasonId)</code></td>
+            <td>Provider-cancellation penalty handler.</td></tr>
+        </tbody>
+      </table>
+      <div class="note warn"><span class="lab">ChatHub is empty and MessageSentDomainEvent has no handler</span>
+        <p><code class="in">API/Hubs/ChatHub.cs</code> is a bare <code class="in">class ChatHub : Hub { }</code> with no methods, and
+        <code class="in">MessageSentDomainEvent</code> has no <code class="in">INotificationHandler</code> registered. Messaging is
+        therefore persisted but never pushed in real time — the frontend chat composer is UI-only to match.</p></div>
     </section>
 
     <!-- INTERCEPTORS -->
@@ -985,7 +1173,13 @@ return "Code sent Successfully";</pre></div>
           <tr><td>11</td><td>No auth, plaintext passwords, OTP logged</td><td>Critical security gap.</td></tr>
           <tr><td>12</td><td><code class="in">AddControllers()</code> registered twice; no CORS/Swagger</td><td>Minor duplication; Swagger link 404s.</td></tr>
           <tr><td>13</td><td><code class="in">ICurrentUserService</code> declared but unimplemented; <code class="in">LoggingBehavior</code> unused</td><td>Dead contract / dead code.</td></tr>
-          <tr><td>10–11-ish</td><td>Service stubs (<code class="in">NotificationService</code>, <code class="in">PaymentService</code>, <code class="in">ProviderPenaltyService</code>)</td><td>Domain events and refunds have no effect.</td></tr>
+          <tr><td>14</td><td>Service stubs (<code class="in">NotificationService</code>, <code class="in">PaymentService</code>, <code class="in">ProviderPenaltyService</code>) are all <code class="in">Task.CompletedTask</code></td><td>Pushes, refunds and provider penalties have no effect.</td></tr>
+          <tr><td>15</td><td><code class="in">DomainException</code> → <strong>406 Not Acceptable</strong>; <code class="in">InvalidOperationException</code> → <strong>500</strong></td><td>Every <code class="in">Order</code> state-guard surfaces as a content-negotiation status, and recoverable misuse becomes a server error.</td></tr>
+          <tr><td>16</td><td><code class="in">CategoryMappingProfile</code> maps <code class="in">ParentCategoryName</code> with <code class="in">src.ParentCategory!.Name</code></td><td>Null-forgiving operator on a genuinely-null parent → projecting any root category throws.</td></tr>
+          <tr><td>17</td><td><code class="in">ChatHub</code> is an empty <code class="in">Hub</code> and <code class="in">MessageSentDomainEvent</code> has no handler</td><td>Messages persist but are never pushed in real time.</td></tr>
+          <tr><td>18</td><td>Two event records live in a bare <code class="in">Domain.Events</code> namespace; admin event uses <code class="in">OrderID</code> vs <code class="in">OrderId</code></td><td>Extra <code class="in">using</code> churn and inconsistent casing for anyone refactoring by pattern.</td></tr>
+          <tr><td>19</td><td>launchSettings sets <code class="in">launchUrl: swagger</code> but Swagger/OpenAPI is never registered</td><td>The default launch URL 404s.</td></tr>
+          <tr><td>20</td><td><code class="in">IUnitOfWork</code> exposes <code class="in">CompleteAsync</code> while handlers also call <code class="in">SaveChangesAsync</code></td><td>Two commit method names across the same abstraction.</td></tr>
         </tbody>
       </table>
       <div class="note beginner"><span class="lab">Two fixes ship with this UI</span>

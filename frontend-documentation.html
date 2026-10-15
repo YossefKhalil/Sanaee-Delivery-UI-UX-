@@ -384,6 +384,70 @@ dotnet run   --project "src/Presentation/API" --launch-profile http
         the base address handed to <code class="in">HttpClient</code>: the server passes the API URL directly; the WASM client
         passes <code class="in">NavigationManager.BaseUri</code>, i.e. its own origin. That single substitution is what routes
         WASM traffic through the proxy and server traffic straight to the API.</p></div>
+
+      <h4>The render pipeline</h4>
+      <p>Three small files wire the document and the router:</p>
+      <div class="code" data-lang="razor"><div class="bar"><span class="lang">razor — Components/App.razor (head &amp; body, abridged)</span><button class="copy">Copy</button></div><pre>
+&lt;ResourcePreloader /&gt;
+&lt;link href="https://fonts.googleapis.com/css2?family=Roboto…" rel="stylesheet" /&gt;
+&lt;link rel="stylesheet" href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" /&gt;
+&lt;link rel="stylesheet" href="@Assets["sanaee.css"]" /&gt;
+&lt;link rel="stylesheet" href="@Assets["SanaeeUI.styles.css"]" /&gt;   @* scoped CSS *@
+&lt;ImportMap /&gt;  &lt;link rel="icon" href="favicon.ico" /&gt;  &lt;HeadOutlet /&gt;
+…
+&lt;Routes /&gt;  &lt;ReconnectModal /&gt;
+&lt;script src="@Assets["_framework/blazor.web.js"]"&gt;&lt;/script&gt;
+&lt;script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"&gt;&lt;/script&gt;</pre></div>
+      <div class="code" data-lang="razor"><div class="bar"><span class="lang">razor — Components/Routes.razor</span><button class="copy">Copy</button></div><pre>
+&lt;Router AppAssembly="typeof(Program).Assembly"
+        AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }"
+        NotFoundPage="typeof(Pages.NotFound)"&gt;
+    &lt;Found Context="routeData"&gt;
+        &lt;RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" /&gt;
+        &lt;FocusOnNavigate RouteData="routeData" Selector="h1" /&gt;
+    &lt;/Found&gt;
+&lt;/Router&gt;</pre></div>
+      <p class="muted">Key detail: <code class="in">AdditionalAssemblies</code> points at the <em>client</em> assembly (via its
+        <code class="in">_Imports</code> type) so the host's router discovers the 21 client routes. Both
+        <code class="in">@Assets[…]</code> references are the static-asset fingerprinting from
+        <code class="in">MapStaticAssets()</code>.</p>
+
+      <h4>Global imports (both _Imports.razor)</h4>
+      <p>Both projects import the same Blazor/MudBlazor namespaces; the host adds the server-side ones and the client adds
+        <code class="in">Shared</code>:</p>
+      <div class="code" data-lang="razor"><div class="bar"><span class="lang">razor — _Imports.razor (host adds these on top)</span><button class="copy">Copy</button></div><pre>
+@using System.Net.Http[.Json]
+@using Microsoft.AspNetCore.Components.{Forms,Routing,Web,Web.Virtualization}
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.JSInterop
+@using MudBlazor[.Services]
+@using SanaeeUI.Client[.Models,.Services]      // both projects
+// host only:  @using SanaeeUI · SanaeeUI.Components · SanaeeUI.Components.Layout
+// client only: @using SanaeeUI.Client.Shared</pre></div>
+
+      <h4>AppState — the Demo/Live switch</h4>
+      <p>A tiny observable holding the current <code class="in">DataMode</code> (defaults to <code class="in">Demo</code>) and the
+        API base URL. <code class="in">SetMode</code>/<code class="in">ToggleMode</code> fire a <code class="in">Changed</code>
+        event that <code class="in">MainLayout</code> subscribes to — the <code class="in">SanaeeDataServiceRouter</code> reads
+        <code class="in">Mode</code> on every call, so the next data request uses the newly selected backend.</p>
+      <div class="code" data-lang="csharp"><div class="bar"><span class="lang">csharp — AppState</span><button class="copy">Copy</button></div><pre>
+public class AppState
+{
+    public DataMode Mode { get; private set; } = DataMode.Demo;
+    public string ApiBaseUrl { get; set; } = "http://localhost:5270/";
+    public event Action? Changed;
+
+    public void SetMode(DataMode mode)
+    { if (Mode == mode) return; Mode = mode; Changed?.Invoke(); }
+
+    public void ToggleMode() =&gt; SetMode(Mode == DataMode.Demo ? DataMode.Live : DataMode.Demo);
+}</pre></div>
+      <div class="note beginner"><span class="lab">Ports &amp; config keys</span>
+        <p>The host binds <strong>http://localhost:5105</strong> (the <code class="in">http</code> profile; the
+        <code class="in">https</code> profile adds <strong>https://localhost:7105</strong>). The API base URL comes from
+        <code class="in">SanaeeApi:BaseUrl</code> in the host's <code class="in">appsettings.json</code>
+        (<code class="in">http://localhost:5270/</code>); the client's <code class="in">wwwroot/appsettings.json</code> mirrors it
+        for the WASM-side configuration.</p></div>
     </section>
 
     <!-- RENDERING -->
@@ -739,6 +803,43 @@ public static string CssVariables(SanaeeColorSet c) =&gt; $$"""
         <p>Dark mode is a boolean on <code class="in">MainLayout</code>. It feeds <code class="in">IsDarkMode</code> to
         <code class="in">MudThemeProvider</code> and recomputes <code class="in">_cssVariables</code>, so the Mud palette and the
         raw CSS variables switch together in the same render.</p></div>
+
+      <h4>Global stylesheet: sanaee.css</h4>
+      <p><code class="in">SanaeeUI/wwwroot/sanaee.css</code> (~160 lines) holds the layout helpers and the branded flourishes,
+        and it references <em>only</em> the <code class="in">--sanaee-*</code> variables (with hard-coded fallbacks so the page
+        renders before the theme style tag loads). Notable classes:</p>
+      <table>
+        <thead><tr><th>Class</th><th>What it styles</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">.hero-card</code></td><td>Dashboard hero: radial gold gradient over teal, plus an <code class="in">::after</code> dotted-grid motif for the Egyptian texture.</td></tr>
+          <tr><td><code class="in">.sanaee-main</code></td><td>Page background — a large <code class="in">color-mix</code> radial tint over the sand colour.</td></tr>
+          <tr><td><code class="in">.sanaee-table …</code></td><td>Uppercase, letter-spaced, secondary-coloured table headers.</td></tr>
+          <tr><td><code class="in">.stat-card</code> / <code class="in">.sanaee-card</code></td><td>Rounded cards; the stat card lifts on hover.</td></tr>
+          <tr><td><code class="in">.detail-row</code></td><td>Dashed-separator label/value rows in detail panes.</td></tr>
+          <tr><td><code class="in">.empty-state</code></td><td>Centred empty-state column with faded icon.</td></tr>
+          <tr><td><code class="in">.filter-bar</code> / <code class="in">.money</code> / <code class="in">.rating-gold</code> / <code class="in">.status-dot</code></td><td>Filter container; tabular money; gold rating stars; status dot.</td></tr>
+          <tr><td><code class="in">.sanaee-appbar-*</code> / <code class="in">.sanaee-global-search</code> / <code class="in">.sanaee-breadcrumbs</code></td><td>App-bar brand row, gold hairline, search field and breadcrumb sizing.</td></tr>
+          <tr><td><code class="in">.gap-1…4</code> / <code class="in">.mono</code> / <code class="in">.tabular</code> / <code class="in">.text-truncate-2</code></td><td>Spacing, monospace, tabular numerals and 2-line clamp helpers.</td></tr>
+        </tbody>
+      </table>
+
+      <h4>MudBlazor components in heavy rotation</h4>
+      <p>The console leans on a consistent subset of MudBlazor (v9). The patterns that recur:</p>
+      <ul>
+        <li><code class="in">MudTable</code> + <code class="in">MudTablePager</code> (page sizes 10/25/50/100), with
+          <code class="in">Hover</code>, <code class="in">Striped</code>, the <code class="in">sanaee-table</code> class and an
+          <code class="in">EmptyState</code> in <code class="in">NoRecordsContent</code>.</li>
+        <li><code class="in">MudChart T="double"</code> — <code class="in">ChartType.Line</code> (revenue),
+          <code class="in">Donut</code> (status) and <code class="in">Bar</code> (category, cancellation reasons) on the dashboard.</li>
+        <li><code class="in">MudTimeline</code> — order history and provider-status logs.</li>
+        <li><code class="in">MudRating</code> — read-only star display and the “minimum rating” review filter.</li>
+        <li><code class="in">MudSelect</code>, <code class="in">MudTextField</code>, <code class="in">MudSwitch</code>,
+          <code class="in">MudChip</code>, <code class="in">MudAvatar</code>, <code class="in">MudIconButton</code> for controls.</li>
+        <li>Dialogs use <code class="in">IDialogService.ShowAsync&lt;T&gt;</code> with
+          <code class="in">DialogParameters</code>/<code class="in">DialogOptions</code> and read back
+          <code class="in">result.Canceled</code>/<code class="in">result.Data</code> (MudBlazor 9's
+          <code class="in">IMudDialogInstance</code>).</li>
+      </ul>
     </section>
 
     <!-- SHELL -->
@@ -754,6 +855,12 @@ public static string CssVariables(SanaeeColorSet c) =&gt; $$"""
         <li>Notifications menu (static sample items) and a light/dark toggle.</li>
         <li>Profile avatar menu (Profile / Settings / Sign out — presentational).</li>
       </ul>
+      <div class="note warn"><span class="lab">The global search term is dropped on arrival</span>
+        <p><code class="in">OnSearchKeyDown</code> builds <code class="in">/orders?q={term}</code> and navigates, but
+        <code class="in">Orders.razor</code> never reads the <code class="in">q</code> query parameter — it only filters on its own
+        <code class="in">_search</code> field. So the search box jumps you to Orders and then discards what you typed; you have to
+        re-enter it in the page's own search field. Wiring it up needs <code class="in">NavigationManager</code> +
+        <code class="in">QueryHelpers.ParseQuery</code> in <code class="in">OnInitializedAsync</code>.</p></div>
       <h4>Drawer &amp; groups</h4>
       <p>Seven groups, each a <code class="in">MudNavGroup</code>: Marketplace, People, KYC &amp; Trust, Catalog, Finance,
         Operations, System. Active links are tinted with the primary colour.</p>
@@ -809,6 +916,21 @@ return stats;</pre></div>
         <p>Building the stats triggers the seven list queries above, several of which themselves aggregate over parents. In
         Live mode this is a burst of parallel HTTP calls — deliberately bounded by <code class="in">AggregateCap</code>, but
         still the heaviest page in the app.</p></div>
+      <h4>Two charts only render in Demo mode</h4>
+      <p>The dashboard lays out four charts: a revenue <strong>line</strong>, a status <strong>donut</strong>, a category
+        <strong>bar</strong> and a cancellation-reason <strong>bar</strong>. The two data sources differ by mode:</p>
+      <table>
+        <thead><tr><th>Bucket</th><th>Demo</th><th>Live</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">OrdersByStatus</code></td><td>✓</td><td>✓</td></tr>
+          <tr><td><code class="in">OrdersByCategory</code></td><td>✓</td><td>✓</td></tr>
+          <tr><td><code class="in">RevenueTrend</code> (7-day line)</td><td>✓ — computed from payments by date</td><td><strong>✗ never populated</strong></td></tr>
+          <tr><td><code class="in">CancellationReasons</code></td><td>✓ — synthesised per reason</td><td><strong>✗ never populated</strong></td></tr>
+        </tbody>
+      </table>
+      <p><code class="in">DemoData.BuildStats()</code> fills all four; the live
+        <code class="in">SanaeeApiClient.GetDashboardStatsAsync()</code> fills only the first two (it has no per-day payment
+        breakdown and no cancellation-reason counts to read). So in Live mode the revenue-line and reason charts render empty.</p>
       <div class="expert"><span class="lab">Expert note — the buckets are computed client-side</span>
         <p>The API exposes no aggregate endpoint. Every KPI, trend and chart bucket is derived in the client from the fetched
         lists. That keeps the client independent of the backend's (missing) analytics but means accuracy is limited to whatever
@@ -829,24 +951,65 @@ Breadcrumbs (from MainLayout)
                       states: loading flag · EmptyState on NoRecords
                            └─ Detail dialog / drawer on row action</pre></div>
       <h4>Shared component kit</h4>
-      <p class="muted">Sixteen small, token-aware components keep pages consistent. Highlights:</p>
+      <p class="muted">Seventeen small, token-aware components plus <code class="in">StatusFormat.cs</code> keep pages consistent.
+        Parameters shown are the public <code class="in">[Parameter]</code> surface of each:</p>
       <table>
-        <thead><tr><th>Component</th><th>Purpose</th></tr></thead>
+        <thead><tr><th>Component</th><th>Parameters</th><th>Purpose</th></tr></thead>
         <tbody>
-          <tr><td><code class="in">PageHeader</code></td><td>Title, subtitle, count chip, action slot.</td></tr>
-          <tr><td><code class="in">StatCard</code></td><td>KPI tile with icon, hover-lift and caption.</td></tr>
-          <tr><td><code class="in">FilterBar</code></td><td>Rounded container grouping the filter controls.</td></tr>
-          <tr><td><code class="in">EmptyState</code></td><td>Consistent no-records UI with optional action.</td></tr>
-          <tr><td><code class="in">MoneyText</code></td><td>Tabular EGP display; null becomes an em dash; optional signed.</td></tr>
-          <tr><td><code class="in">RatingStars</code></td><td>Gold-tinted read-only rating with review count.</td></tr>
-          <tr><td><code class="in">StatusChip</code></td><td>Semantic status badge (colour via <code class="in">StatusFormat</code>).</td></tr>
-          <tr><td><code class="in">EntityAvatar</code></td><td>Initials avatar, teal by default.</td></tr>
+          <tr><td><code class="in">PageHeader</code></td><td><code class="in">Title · Subtitle? · Count? · Actions?</code></td><td>Title block with an action slot.</td></tr>
+          <tr><td><code class="in">StatCard</code></td><td><code class="in">Title · Value · Icon · Color · Caption?</code></td><td>KPI tile with icon, hover-lift and caption.</td></tr>
+          <tr><td><code class="in">SectionCard</code></td><td><code class="in">Title? · Subtitle? · Actions? · ChildContent? · Elevation · Class?</code></td><td>Titled card wrapper for dashboard/detail blocks.</td></tr>
+          <tr><td><code class="in">FilterBar</code></td><td><code class="in">FilterContent?</code></td><td>Rounded container grouping the filter controls.</td></tr>
+          <tr><td><code class="in">EmptyState</code></td><td><code class="in">Icon · Title · Message? · Action?</code></td><td>Consistent no-records UI with optional action.</td></tr>
+          <tr><td><code class="in">TableSkeleton</code></td><td><code class="in">Columns · Rows</code></td><td>Skeleton placeholder while a table loads.</td></tr>
+          <tr><td><code class="in">MoneyText</code></td><td><code class="in">Amount? · Currency · Signed · ColorCss?</code></td><td>Tabular EGP display; null becomes an em dash; optional signed.</td></tr>
+          <tr><td><code class="in">RatingStars</code></td><td><code class="in">Value · Count? · ShowValue · Size</code></td><td>Gold-tinted read-only rating with review count.</td></tr>
+          <tr><td><code class="in">StatusChip</code></td><td><code class="in">Text? · Color · Icon? · Size · Variant · Class?</code></td><td>Semantic status badge (colour via <code class="in">StatusFormat</code>).</td></tr>
+          <tr><td><code class="in">EntityAvatar</code></td><td><code class="in">Name? · Color · Size · Variant · Class?</code></td><td>Initials avatar, teal by default.</td></tr>
+          <tr><td><code class="in">DetailRow</code></td><td><code class="in">Label · Value?</code></td><td>Dashed label/value line for detail panes.</td></tr>
+          <tr><td><code class="in">CreateOrderDialog</code></td><td><code class="in">Customers · Categories · Addresses</code></td><td>Three MudSelects + visiting time + problem.</td></tr>
+          <tr><td><code class="in">CreateOfferDialog</code></td><td><code class="in">Providers · Orders</code></td><td>Provider bids labor/material + arrival.</td></tr>
+          <tr><td><code class="in">OrderDetailsDialog</code></td><td><code class="in">Order</code></td><td>Offers sorted by total, MudTimeline history, fulfil/cancel.</td></tr>
+          <tr><td><code class="in">ProviderDetailsDialog</code></td><td><code class="in">Provider · Documents · Skills · Reviews</code></td><td>Profile + KYC + reviews, aggregated by name.</td></tr>
+          <tr><td><code class="in">ReasonDialog</code></td><td><code class="in">Title</code></td><td>Free-text reason (cancellation / rejection).</td></tr>
+          <tr><td><code class="in">ConfirmDialog</code></td><td><code class="in">Title · Message · ConfirmText · CancelText · ConfirmColor</code></td><td>Generic yes/no confirmation.</td></tr>
         </tbody>
       </table>
       <div class="note beginner"><span class="lab">StatusFormat is the single status source</span>
         <p>Colours and icons for order, offer, payment, provider, application and document statuses all come from
         <code class="in">StatusFormat</code>, so a status looks identical everywhere it appears. It also provides
-        <code class="in">Spaced()</code>, turning <code class="in">OfferAccepted</code> into “Offer Accepted”.</p></div>
+        <code class="in">Spaced()</code>, turning <code class="in">OfferAccepted</code> into “Offer Accepted”, and
+        <code class="in">ToColor()</code>/<code class="in">ToIcon()</code> used inline by tables and timelines.</p></div>
+
+      <h4>The demo dataset (DemoData)</h4>
+      <p>Because the UI ships before the backend is seeded, a deterministic in-memory dataset
+        (<code class="in">Services/DemoData.cs</code>, seeded with <code class="in">new Random(20261014)</code>) mirrors the real schema so
+        every page has believable data without SQL Server. Counts:</p>
+      <table>
+        <thead><tr><th>Entity</th><th>Rows</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Orders</td><td>42</td><td>Spread across all five statuses; each carries a category, customer, address and offer count.</td></tr>
+          <tr><td>Offers</td><td>~1–4 per order (capped 4)</td><td>Generated from each order's <code class="in">OffersCount</code>; first offer becomes the accepted one where applicable.</td></tr>
+          <tr><td>Providers</td><td>16</td><td>Mixed Active/Suspended/Inactive; ~⅔ available.</td></tr>
+          <tr><td>Customers</td><td>24</td><td>Egyptian names, <code class="in">@example.com</code> emails.</td></tr>
+          <tr><td>Categories</td><td>8 + 2</td><td>Two extra categories have a <code class="in">ParentCategoryId</code> (1 and 2) to exercise the tree.</td></tr>
+          <tr><td>Cancel reasons</td><td>9</td><td>3 customer · 3 provider · 3 admin (one admin reason inactive).</td></tr>
+          <tr><td>Provider documents</td><td>64</td><td>16 providers × 4 document types, mixed statuses.</td></tr>
+          <tr><td>Wallets</td><td>20</td><td>Balances 0–4200 EGP; ~⅙ inactive.</td></tr>
+          <tr><td>Wallet transactions</td><td>40</td><td>All seven <code class="in">TransactionType</code>s with matching descriptions.</td></tr>
+          <tr><td>Payments</td><td>36</td><td>Five methods, mixed statuses, <code class="in">TXN-…</code> references.</td></tr>
+          <tr><td>Reviews</td><td>30</td><td>Ratings 3–5, some edited, some comment-less.</td></tr>
+          <tr><td>Addresses · Phones</td><td>22 · 18</td><td>Cairo/Giza/Alexandria regions, some default.</td></tr>
+          <tr><td>Messages</td><td>~4–7 per order × 8 orders</td><td>Threaded by order; every 4th is a Location message; some system messages.</td></tr>
+          <tr><td>Provider categories</td><td>~1–3 per provider</td><td>Skills with years of experience.</td></tr>
+          <tr><td>Application / Provider-status / Order-status histories</td><td>16 / 16 / per-order</td><td>Full KYC + order timelines.</td></tr>
+          <tr><td>Audit logs</td><td>28</td><td>Mixed actions/entities with IP addresses.</td></tr>
+        </tbody>
+      </table>
+      <div class="note warn"><span class="lab">Demo mutates state; Live does not</span>
+        <p><code class="in">DemoDataService</code> writes straight into the shared <code class="in">DemoData</code> lists (e.g.
+        <code class="in">CreateOrderAsync</code> inserts at index 0), so a demo-created order persists across navigations. In Live
+        mode every call is a fresh HTTP round-trip, so the same action only takes effect if the API accepts it.</p></div>
     </section>
 
     <!-- DIALOGS -->
@@ -870,6 +1033,30 @@ Breadcrumbs (from MainLayout)
         <code class="in">(OrderId, ReasonId, Notes, IssueRefund)</code>. The client sends <code class="in">reasonId = 0</code> and
         puts the text in <code class="in">notes</code> with <code class="in">issueRefund = false</code>, so a completed order
         cannot be refunded through the UI. See <a href="#issues">Known quirks</a>.</p></div>
+
+      <h4>Key page behaviours</h4>
+      <p>The list pages are uniform, but a few carry logic worth calling out:</p>
+      <table>
+        <thead><tr><th>Page</th><th>Notable behaviour</th></tr></thead>
+        <tbody>
+          <tr><td><code class="in">Orders</code></td>
+            <td>Client-side filtering (search text + status + category) over the fetched list; pager 10/25/50/100; “New order” opens <code class="in">CreateOrderDialog</code>; the eye action opens <code class="in">OrderDetailsDialog</code>; surfaces <code class="in">LastError</code> as a warning snackbar.</td></tr>
+          <tr><td><code class="in">OrderDetailsDialog</code></td>
+            <td>Loads offers for the order and <strong>sorts them cheapest-first</strong> (<code class="in">OrderBy(Total)</code>); an “Accept” button appears only while the order is Pending and the offer is Pending; a <code class="in">MudTimeline</code> renders the status history; Start work / Complete / Cancel buttons gate on the order status.</td></tr>
+          <tr><td><code class="in">Providers</code></td>
+            <td>Availability <code class="in">MudSwitch</code> per row (see quirk #5); an “online only” filter; the details dialog <strong>aggregates by provider name</strong> — it re-queries documents, skills and reviews and filters client-side by <code class="in">provider.Name</code>.</td></tr>
+          <tr><td><code class="in">Documents</code></td>
+            <td>Stat-card row (approved/pending/rejected/re-upload); Approve acts directly, while Reject opens <code class="in">ReasonDialog</code> and passes the returned string to <code class="in">RejectDocumentAsync(id, reason)</code>.</td></tr>
+          <tr><td><code class="in">Reviews</code></td>
+            <td>Read-only <code class="in">MudRating</code> per row plus a <code class="in">MudRating</code> “minimum rating” filter.</td></tr>
+          <tr><td><code class="in">ProviderStatusLog</code> / <code class="in">OrderHistory</code></td>
+            <td>Full-height <code class="in">MudTimeline</code>s coloured by status via <code class="in">StatusFormat.ToColor()</code>.</td></tr>
+          <tr><td><code class="in">Wallets / Transactions / Payments</code></td>
+            <td>Money rendered through <code class="in">MoneyText</code> (tabular EGP, null → em dash, optional signed colouring).</td></tr>
+          <tr><td><code class="in">Chat</code></td>
+            <td>Master–detail: a <code class="in">MudList</code> of order threads on the left, the selected thread's messages on the right, and a composer that is UI-only (see the Messaging section).</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <!-- CHAT -->
@@ -926,14 +1113,17 @@ return await GetForParentsAsync&lt;GetMessageDto, MessageListItem&gt;(orderIds,
           <tr><td>2</td><td>No aggregate/analytics endpoint</td><td>All dashboard KPIs and buckets are computed client-side from capped pages.</td></tr>
           <tr><td>3</td><td>Per-entity-only endpoints</td><td>Offers, documents, reviews, messages, addresses, phones are aggregated by iterating up to 20 parents (<code class="in">AggregateCap</code>).</td></tr>
           <tr><td>4</td><td><code class="in">pageSize</code> capped at 100</td><td>“All” reads request 100; larger asks return a 400 validation error.</td></tr>
-          <tr><td>5</td><td>Availability toggle ignores the requested value</td><td><code class="in">SetProviderAvailabilityAsync(available)</code> calls an endpoint that flips the current state; the argument is informational only.</td></tr>
+          <tr><td>5</td><td>Availability toggle never sends the new value</td><td>Live <code class="in">SetProviderAvailabilityAsync(id, available)</code> sends <code class="in">PATCH api/Providers/{id}</code> with a <strong>null body</strong>, so <code class="in">available</code> is dropped and the server has nothing to change. Demo applies it locally, which is why the switch appears to work there.</td></tr>
           <tr><td>6</td><td>Admin cancel needs a <code class="in">ReasonId</code>, UI has free text</td><td>Sends <code class="in">reasonId: 0</code> with the text in <code class="in">notes</code> and <code class="in">issueRefund: false</code>.</td></tr>
           <tr><td>7</td><td>No audit-log endpoint</td><td><code class="in">GetAuditLogsAsync</code> returns an empty list; the Audit Logs page is structurally complete but always empty.</td></tr>
           <tr><td>8</td><td>No reviews list endpoint (per reviewee only)</td><td>The UI omits the reviewee name and shows reviews floored to known provider/customer ids.</td></tr>
           <tr><td>9</td><td>No CORS, no auth on the API</td><td>Worked around with the same-origin proxy; the whole console is unauthenticated and trusted-network-only.</td></tr>
           <tr><td>10</td><td>Route typo blocks API startup</td><td>Fixed in this fork (<code class="in">[contorller]</code> → <code class="in">[controller]</code>); the client points at the corrected <code class="in">api/OrderStatusHistories/admin</code> path.</td></tr>
           <tr><td>11</td><td>Broken order-history projection on the API</td><td><code class="in">GET /api/OrderStatusHistories/admin</code> returns 500 server-side; the Order Timeline page surfaces the empty/error state.</td></tr>
-          <tr><td>12</td><td>Chat not connected to SignalR</td><td>Reads historical messages; sending and real-time updates are not implemented.</td></tr>
+          <tr><td>12</td><td>Chat not connected to SignalR</td><td>Reads historical messages; sending and real-time updates are not implemented (and the backend hub is empty).</td></tr>
+          <tr><td>13</td><td>Global search term is dropped on arrival</td><td>The shell navigates to <code class="in">/orders?q=…</code> but <code class="in">Orders.razor</code> never reads <code class="in">q</code> — only its own <code class="in">_search</code> field filters. The typed term is discarded.</td></tr>
+          <tr><td>14</td><td>Demo mode mutates shared state</td><td><code class="in">DemoDataService</code> writes into the static <code class="in">DemoData</code> lists, so demo-created/edited rows persist across navigations — unlike Live, where each action is a fresh HTTP call.</td></tr>
+          <tr><td>15</td><td>Two dashboard charts only populate in Demo</td><td><code class="in">RevenueTrend</code> and <code class="in">CancellationReasons</code> are filled by <code class="in">DemoData.BuildStats()</code> but never by the live client, so those charts render empty in Live mode.</td></tr>
         </tbody>
       </table>
       <div class="note beginner"><span class="lab">What gracefully degrades</span>
