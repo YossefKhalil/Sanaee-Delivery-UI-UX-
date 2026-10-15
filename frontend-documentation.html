@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  /* Themed to Sanaee — Nile teal + antique gold on warm sand. */
+  /* Milligram-style sizing: 62.5% root, rem-based, generous line-height — themed to Sanaee. */
   :root{
     --paper:#f7f3ea; --surface:#fffdfb; --inset:#efe8d8; --paper-2:#fcfaf5;
     --ink:#22302f; --navy:#0b4f4f; --muted:#6f7b7b; --faint:#9aa8a7;
@@ -17,7 +17,7 @@
     --code-bg:#0e2a2a; --code-ink:#dcefe9;
     --mono:'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
     --sans:'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --serif:'Fraunces', ui-serif, Georgia, serif;
+    --serif:'Fraunces', Georgia, 'Times New Roman', serif;
   }
   html[data-theme="dark"]{
     --paper:#0f1516; --surface:#151d1e; --inset:#1b2526; --paper-2:#121a1b;
@@ -26,12 +26,27 @@
     --terra:#c9a227; --terra-soft:#e0bb3a; --sage:#3ea579; --rose:#c15a37;
     --code-bg:#0b2323; --code-ink:#d6ece7;
   }
+  html[data-theme="dark"] ::selection{background:#2a3a2a;}
+  /* at-a-glance summary list */
+  .summary{list-style:none; padding:0; margin:24px 0;}
+  .summary li{padding:10px 0; border-bottom:1px solid var(--line-2); max-width:74ch;}
+  .summary b{color:var(--navy); font-weight:600;}
+  .summary a{font-size:1.2rem;}
+  *{box-sizing:border-box;}
+  html{font-size:62.5%; scroll-behavior:smooth;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
+    font-size:1.62rem; line-height:1.72; font-weight:400; letter-spacing:.005em;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;}
+  a{color:var(--navy); text-decoration:none; border-bottom:1px solid color-mix(in srgb, var(--navy) 25%, transparent);}
+  a:hover{border-bottom-color:var(--terra-soft); color:var(--terra);}
+  code{font-family:var(--mono); font-size:.86em;}
 
   .shell{display:grid; grid-template-columns:282px 1fr; min-height:100vh;}
   aside{position:sticky; top:0; height:100vh; overflow-y:auto; background:var(--paper-2);
     border-right:1px solid var(--line); padding-bottom:40px;}
   main{max-width:840px; margin:0 auto; padding:64px 56px 140px; width:100%;}
 
+  /* sidebar */
   .brand{padding:30px 26px 22px; border-bottom:1px solid var(--line);}
   .brand .mark{font-family:var(--serif); font-size:2.4rem; font-weight:500; color:var(--navy); letter-spacing:-.01em;}
   .brand .mark b{color:var(--terra);}
@@ -44,14 +59,17 @@
   nav a:hover{color:var(--navy); background:transparent;}
   nav a.active{color:var(--navy); font-weight:600; border-left-color:var(--terra);}
 
-  .topctl{display:flex; justify-content:flex-end; margin-bottom:30px;}
+  /* top control */
+  .topctl{display:flex; justify-content:flex-end; align-items:center; margin-bottom:30px;}
+  .topctl .sep{color:var(--faint); margin:0 14px;}
   .qbtn{background:none; border:0; border-bottom:1px dashed var(--line); color:var(--muted); cursor:pointer;
     font-family:var(--sans); font-size:1.28rem; padding:2px 2px 3px; letter-spacing:.01em;}
   .qbtn:hover{color:var(--terra);}
 
+  /* eyebrow + headings */
   .eyebrow{text-transform:uppercase; letter-spacing:.18em; font-size:1.12rem; font-weight:600;
     color:var(--terra); margin:0 0 4px;}
-  h1.title{font-family:var(--serif); font-weight:500; font-size:4.3rem; line-height:1.08; letter-spacing:-.015em;
+  h1.title{font-family:var(--serif); font-weight:500; font-size:4.4rem; line-height:1.08; letter-spacing:-.015em;
     margin:0 0 14px; color:var(--navy);}
   h2.sec{font-family:var(--serif); font-weight:500; font-size:3rem; letter-spacing:-.01em; color:var(--navy);
     margin:64px 0 4px; padding-top:12px;}
@@ -64,77 +82,91 @@
   ul,ol{padding-left:20px;} li{margin:4px 0;}
   ::selection{background:#efd9a6;}
 
+  /* intro meta as a definition list, not stat cards */
   dl.facts{display:grid; grid-template-columns:auto 1fr; gap:2px 26px; margin:26px 0; font-size:1.5rem;}
   dl.facts dt{color:var(--faint); text-transform:uppercase; font-size:1.12rem; letter-spacing:.1em; font-weight:600; padding-top:7px;}
   dl.facts dd{margin:0; padding:6px 0; border-bottom:1px solid var(--line-2);}
   dl.facts dt{border-bottom:1px solid var(--line-2);}
 
-  .tags{display:flex; gap:8px; flex-wrap:wrap; margin:22px 0;}
-  .tags span{font-size:1.2rem; border:1px solid var(--line); border-radius:20px; padding:2px 12px; color:var(--muted);}
+  /* understated tags */
+  .tags{display:flex; flex-wrap:wrap; gap:8px; margin:22px 0;}
+  .tags span{font-size:1.25rem; color:var(--muted); border:1px solid var(--line); border-radius:2px; padding:3px 11px;}
 
-  .note{border-left:3px solid var(--navy); background:var(--paper-2); padding:12px 18px; margin:20px 0; border-radius:0 6px 6px 0;}
-  .note.warn{border-left-color:var(--rose);}
-  .note.tip{border-left-color:var(--sage);}
-  .note .lab{display:block; text-transform:uppercase; letter-spacing:.14em; font-size:1.05rem; font-weight:600; color:var(--navy); margin-bottom:4px;}
-  .note.warn .lab{color:var(--rose);} .note.tip .lab{color:var(--sage);}
-  .note p{margin:0;}
-
-  .expert{border-left:3px solid var(--terra); background:var(--paper-2); padding:12px 18px; margin:20px 0; border-radius:0 6px 6px 0;}
-  .expert .lab{display:block; text-transform:uppercase; letter-spacing:.14em; font-size:1.05rem; font-weight:600; color:var(--terra); margin-bottom:4px;}
-  .expert p{margin:0;}
+  /* notes — thin rule, small-caps label, barely-there tint */
+  .note{border-left:2px solid var(--navy); padding:6px 0 6px 18px; margin:18px 0; max-width:72ch;}
+  .note .lab{display:block; font-size:1.12rem; text-transform:uppercase; letter-spacing:.12em; font-weight:600;
+    color:var(--navy); margin-bottom:2px;}
+  .note.beginner{border-color:var(--sage);} .note.beginner .lab{color:var(--sage);}
+  .note.warn{border-color:var(--rose);} .note.warn .lab{color:var(--rose);}
+  .expert{border-left:2px solid var(--terra); padding:6px 0 6px 18px; margin:18px 0; max-width:72ch;}
+  .expert .lab{display:block; font-size:1.12rem; text-transform:uppercase; letter-spacing:.12em; font-weight:600;
+    color:var(--terra); margin-bottom:2px;}
   html.hide-expert .expert{display:none;}
+  .note p, .expert p{margin:0;}
 
-  .code{margin:20px 0; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--code-bg);}
-  .code .bar{display:flex; justify-content:space-between; align-items:center; padding:7px 14px; background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.07);}
-  .code .lang{font-family:var(--mono); font-size:1.1rem; color:#8fb7b0; text-transform:lowercase; letter-spacing:.04em;}
-  .code .copy{background:none; border:0; color:#8fb7b0; font-family:var(--sans); font-size:1.15rem; cursor:pointer; padding:2px 6px; border-radius:4px;}
-  .code .copy:hover{background:rgba(255,255,255,.08); color:#fff;}
-  .code pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:1.3rem; line-height:1.62; color:var(--code-ink);}
-  .tk{color:#7fd0c8;} .ts{color:#e0c46b;} .tc{color:#7f9a96; font-style:italic;} .tn{color:#e0a06b;} .ty{color:#8fb7e0;} .ta{color:#c9a2e0;}
-  code.in{font-family:var(--mono); font-size:.9em; background:var(--inset); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--navy);}
+  /* code */
+  .code{margin:18px 0; border-radius:4px; overflow:hidden; border:1px solid #1d4040;}
+  .code .bar{display:flex; align-items:center; justify-content:space-between; background:#0a2020;
+    padding:6px 14px; border-bottom:1px solid #1d4040;}
+  .code .lang{font-size:1.05rem; text-transform:uppercase; letter-spacing:.14em; color:#7fb0a8; font-weight:600;}
+  .code pre{margin:0; padding:16px 18px; overflow-x:auto; background:var(--code-bg); color:var(--code-ink);
+    font-family:var(--mono); font-size:1.3rem; line-height:1.62;}
+  .copy{background:none; border:1px solid #2c5656; color:#8fb7b0; border-radius:3px; padding:2px 10px;
+    font-size:1.05rem; cursor:pointer; font-family:var(--sans);}
+  .copy:hover{color:#fff; border-color:var(--terra-soft);}
+  .tk{color:#e0a06b;} .ts{color:#9ec79f;} .tc{color:#6f9a96; font-style:italic;}
+  .tn{color:#d8b46a;} .ty{color:#86b0e6;} .ta{color:#c9a2e0;}
+  code.in{background:var(--inset); border:1px solid var(--line); border-radius:3px; padding:1px 6px; color:var(--rose);}
 
-  table{width:100%; border-collapse:collapse; margin:18px 0; font-size:1.4rem;}
-  th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line-2); vertical-align:top;}
-  th{color:var(--faint); text-transform:uppercase; font-size:1.1rem; letter-spacing:.1em; font-weight:600; border-bottom-color:var(--line);}
-  tr:hover td{background:var(--paper-2);}
+  /* tables — minimal, horizontal rules only */
+  table{width:100%; border-collapse:collapse; margin:18px 0; font-size:1.45rem;}
+  th,td{text-align:left; padding:9px 14px 9px 0; border-bottom:1px solid var(--line-2); vertical-align:top;}
+  th{color:var(--faint); font-size:1.1rem; text-transform:uppercase; letter-spacing:.1em; font-weight:600; border-bottom-color:var(--line);}
+  tbody tr:hover{background:var(--paper-2);}
 
+  /* tabs */
   .tabs{display:flex; gap:22px; border-bottom:1px solid var(--line); margin:20px 0 0;}
-  .tabs button{background:none; border:0; border-bottom:2px solid transparent; color:var(--muted); padding:8px 0; cursor:pointer; font-size:1.42rem; font-family:var(--sans); font-weight:500;}
+  .tabs button{background:none; border:0; border-bottom:2px solid transparent; color:var(--muted);
+    padding:8px 0; cursor:pointer; font-size:1.42rem; font-family:var(--sans); font-weight:500;}
   .tabs button.active{color:var(--navy); border-bottom-color:var(--terra);}
   .tabpane{display:none;} .tabpane.active{display:block;}
 
+  /* method + auth markers — text, lightly tinted, not chunky badges */
   .m{font-family:var(--mono); font-size:1.08rem; font-weight:600; letter-spacing:.04em; width:54px; display:inline-block;}
   .m.get{color:#2f6fb0;} .m.post{color:#4a7d46;} .m.put{color:#b07d1f;} .m.patch{color:#8a5ea3;} .m.delete{color:#b14a3c;}
   .auth{font-size:1.12rem; color:var(--muted); letter-spacing:.02em;}
   .auth.admin{color:var(--rose);} .auth.customer{color:var(--sage);} .auth.provider{color:var(--terra);} .auth.public{color:var(--faint);}
 
+  /* endpoint / route explorer */
   .controls{margin:18px 0 4px;}
   #ep-search{width:100%; background:var(--surface); border:1px solid var(--line); color:var(--ink);
-    padding:11px 14px; border-radius:6px; font-size:1.4rem;}
+    padding:11px 14px; border-radius:3px; font-size:1.5rem; font-family:var(--sans);}
   #ep-search:focus{outline:none; border-color:var(--terra-soft);}
-  .chips{display:flex; gap:16px; flex-wrap:wrap; margin:16px 0 4px;}
-  .chip{font-size:1.2rem; border:1px solid var(--line); border-radius:20px; padding:3px 13px; color:var(--muted); cursor:pointer;}
-  .chip:hover{border-color:var(--terra-soft); color:var(--navy);}
-  .chip.active{background:var(--terra); border-color:var(--terra); color:#fff;}
-  .ep-count{color:var(--faint); font-size:1.25rem; margin:12px 0 2px;}
+  .chips{display:flex; gap:18px; flex-wrap:wrap; margin:16px 0 6px;}
+  .chip{cursor:pointer; color:var(--muted); font-size:1.35rem; border-bottom:2px solid transparent; padding-bottom:2px;}
+  .chip.active{color:var(--navy); font-weight:600; border-bottom-color:var(--terra);}
+  .ep-count{color:var(--faint); font-size:1.25rem; margin:8px 0;}
   .ep{border-bottom:1px solid var(--line-2);}
-  .ep-head{display:flex; gap:14px; align-items:baseline; padding:9px 4px; cursor:pointer; border-radius:5px;}
+  .ep-head{display:flex; align-items:baseline; gap:16px; padding:11px 4px; cursor:pointer;}
   .ep-head:hover{background:var(--paper-2);}
-  .ep-route{font-family:var(--mono); font-size:1.32rem; color:var(--ink); flex:1; word-break:break-all;}
-  .ep-title{font-size:1.3rem; color:var(--muted);}
-  .ep-body{display:none; padding:2px 4px 14px 68px; font-size:1.35rem; color:var(--muted);}
+  .ep-path{font-family:var(--mono); font-size:1.32rem; color:var(--ink); flex:1; word-break:break-all;}
+  .ep-sum{color:var(--faint); font-size:1.25rem;}
+  .ep-body{display:none; padding:2px 4px 16px 74px;}
   .ep.open .ep-body{display:block;}
-  .ep-body p{margin:4px 0 0;}
-  .ep-tag{display:inline-block; font-size:1.05rem; border:1px solid var(--line); border-radius:12px; padding:0 9px; margin:8px 6px 0 0; color:var(--faint); text-transform:uppercase; letter-spacing:.07em;}
+  .ep-meta{display:grid; grid-template-columns:auto 1fr; gap:3px 20px; font-size:1.4rem; margin-top:6px;}
+  .ep-meta b{color:var(--faint); font-weight:600; font-size:1.08rem; text-transform:uppercase; letter-spacing:.08em;}
   @media (max-width:1000px){ .ep-body{padding-left:4px;} }
 
+  /* arch diagram */
   .arch{width:100%; height:auto; margin:22px 0;}
   .arch .box{fill:var(--surface); stroke:var(--line); stroke-width:1.5;}
+  .arch .box.api{stroke:#b8893f;} .arch .box.app{stroke:var(--terra-soft);}
+  .arch .box.infra{stroke:#0b6e6e;} .arch .box.dom{stroke:#9c6b8a;}
   .arch .box.host{stroke:#0b6e6e;} .arch .box.wasm{stroke:var(--terra-soft);}
-  .arch .box.api{stroke:#b8893f;} .arch .box.browser{stroke:#9c6b8a;}
+  .arch .box.browser{stroke:#9c6b8a;}
   .arch .t-title{fill:var(--navy); font-family:var(--sans); font-weight:600; font-size:13px;}
   .arch .t-sub{fill:var(--muted); font-family:var(--sans); font-size:10.5px;}
-  .arch .arrow{stroke:#c9bd9c; stroke-width:1.5; fill:none; marker-end:url(#ah);}
+  .arch .arrow{stroke:#bcae98; stroke-width:1.5; fill:none; marker-end:url(#ah);}
   .arch .arrow.dashed{stroke-dasharray:5 4;}
   .arch .lbl{fill:var(--faint); font-family:var(--sans); font-size:10px;}
 
@@ -194,7 +226,8 @@
   <main>
     <div class="topctl">
       <button class="qbtn" id="themeToggle">Dark mode</button>
-      <button class="qbtn" id="expertToggle" style="margin-left:14px">Hide expert notes</button>
+      <span class="sep">·</span>
+      <button class="qbtn" id="expertToggle">Hide expert notes</button>
     </div>
 
     <!-- OVERVIEW -->
@@ -219,7 +252,7 @@
         <span>BFF reverse proxy</span><span>Token theme</span><span>Demo/Live switch</span>
       </div>
 
-      <div class="note tip"><span class="lab">Where this UI comes from</span>
+      <div class="note beginner"><span class="lab">Where this UI comes from</span>
         <p>The original repository ships only the .NET backend (<code class="in">src/</code>). This fork adds an entirely new
         solution, <code class="in">SanaeeUI/</code>, and leaves the original code intact apart from one required fix (a route
         typo in the histories controller that otherwise crashes API startup). The UI talks to the API as-is.</p></div>
@@ -269,7 +302,7 @@ dotnet run   --project "src/Presentation/API" --launch-profile http
       <div class="note"><span class="lab">It opens in Demo mode</span>
         <p>The app boots with the in-memory dataset so every page renders immediately. Use the
         <em>Connect to API</em> button in the top bar to flip to Live; the chip beside it shows which source is active.</p></div>
-      <div class="note tip"><span class="lab">Pointing at a different API</span>
+      <div class="note beginner"><span class="lab">Pointing at a different API</span>
         <p>The base URL is the single key <code class="in">SanaeeApi:BaseUrl</code>, present in both
         <code class="in">SanaeeUI/appsettings.json</code> and <code class="in">SanaeeUI.Client/wwwroot/appsettings.json</code>.
         Edit it (or override with an env var) to target another host.</p></div>
@@ -371,7 +404,7 @@ dotnet run   --project "src/Presentation/API" --launch-profile http
           <tr><td>Interactive WASM</td><td>Browser</td><td>Own origin → proxy</td><td>CORS-free via the host</td></tr>
         </tbody>
       </table>
-      <div class="note tip"><span class="lab">Why InteractiveAuto</span>
+      <div class="note beginner"><span class="lab">Why InteractiveAuto</span>
         <p>It gives a fast first paint (server-rendered HTML, no download wait) while moving to the client for responsiveness,
         and it costs nothing to opt in here because the service graph is identical on both sides.</p></div>
     </section>
@@ -698,7 +731,7 @@ public static string CssVariables(SanaeeColorSet c) =&gt; $$"""
           <tr><td>Appbar</td><td><code class="in">#0B6E6E</code></td><td>Top bar with a gold hairline underneath.</td></tr>
         </tbody>
       </table>
-      <div class="note tip"><span class="lab">Re-skin in one file</span>
+      <div class="note beginner"><span class="lab">Re-skin in one file</span>
         <p>To change the entire identity, edit <code class="in">Light</code> and <code class="in">Dark</code> in
         <code class="in">SanaeeBrand.cs</code>. Both the Mud theme and the CSS variables derive from those values, so the shell,
         pages and components all follow.</p></div>
@@ -810,7 +843,7 @@ Breadcrumbs (from MainLayout)
           <tr><td><code class="in">EntityAvatar</code></td><td>Initials avatar, teal by default.</td></tr>
         </tbody>
       </table>
-      <div class="note tip"><span class="lab">StatusFormat is the single status source</span>
+      <div class="note beginner"><span class="lab">StatusFormat is the single status source</span>
         <p>Colours and icons for order, offer, payment, provider, application and document statuses all come from
         <code class="in">StatusFormat</code>, so a status looks identical everywhere it appears. It also provides
         <code class="in">Spaced()</code>, turning <code class="in">OfferAccepted</code> into “Offer Accepted”.</p></div>
@@ -903,7 +936,7 @@ return await GetForParentsAsync&lt;GetMessageDto, MessageListItem&gt;(orderIds,
           <tr><td>12</td><td>Chat not connected to SignalR</td><td>Reads historical messages; sending and real-time updates are not implemented.</td></tr>
         </tbody>
       </table>
-      <div class="note tip"><span class="lab">What gracefully degrades</span>
+      <div class="note beginner"><span class="lab">What gracefully degrades</span>
         <p>When the API is unreachable the proxy returns 502 and the client stores it in <code class="in">LastError</code> while
         returning empty lists — pages show <code class="in">EmptyState</code> rather than throwing. Flipping back to Demo restores
         a fully populated console instantly.</p></div>
@@ -1005,16 +1038,15 @@ function renderList(){
   list.innerHTML = rows.map(([p,t,g]) => `
     <div class="ep">
       <div class="ep-head">
-        <span class="m get">route</span>
-        <span class="ep-route">${p}</span>
-        <span class="ep-title">${t}</span>
+        <span class="ep-path">${p}</span>
+        <span class="ep-sum">${t}</span>
       </div>
       <div class="ep-body">
-        <p>${t} — opens the “${t}” page.</p>
-        <div>
-          <span class="ep-tag">${g}</span>
-          <span class="ep-tag">InteractiveAuto</span>
-          <span class="ep-tag">renders via ISanaeeDataService</span>
+        <p>Renders the “${t}” page.</p>
+        <div class="ep-meta">
+          <b>Group</b><span>${g}</span>
+          <b>Render</b><span>InteractiveAuto (server → WebAssembly)</span>
+          <b>Data</b><span><code class="in">ISanaeeDataService</code> — Demo or Live backend</span>
         </div>
       </div>
     </div>`).join("") || `<div class="ep-count">No routes match.</div>`;
